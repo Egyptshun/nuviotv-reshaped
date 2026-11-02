@@ -96,7 +96,7 @@ internal fun SubtitleStyleSidePanel(
     Column(
         modifier = modifier
             .width(760.dp)
-            .height(330.dp)
+            .height(380.dp)
             .clip(RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp))
             .background(Color(0xFF101010))
             .then(if (isStyleDisabledByLibass) Modifier.focusProperties { canFocus = false } else Modifier)
@@ -280,6 +280,18 @@ internal fun SubtitleStyleSidePanel(
                         }
                     }
                 }
+                SubtitleStyleBackgroundControls(
+                    subtitleStyle = subtitleStyle,
+                    onEvent = dispatchStyleEvent,
+                    cardWidth = StyleCardWidth,
+                    cardHeight = StyleCardHeight
+                )
+                SubtitleStyleShadowControls(
+                    subtitleStyle = subtitleStyle,
+                    onEvent = dispatchStyleEvent,
+                    cardWidth = StyleCardWidth,
+                    cardHeight = StyleCardHeight
+                )
             }
 
             Column(verticalArrangement = Arrangement.spacedBy(NuvioTheme.spacing.sm)) {
@@ -331,7 +343,7 @@ internal fun SubtitleStyleSidePanel(
 }
 
 @Composable
-private fun SubtitleStyleSection(
+internal fun SubtitleStyleSection(
     title: String,
     centerContent: Boolean = true,
     modifier: Modifier = Modifier,
@@ -394,7 +406,7 @@ private fun SubtitleStyleSettingRow(
 }
 
 @Composable
-private fun SubtitleStyleStepperButton(
+internal fun SubtitleStyleStepperButton(
     icon: ImageVector,
     contentDescription: String? = null,
     onClick: () -> Unit,
@@ -416,7 +428,7 @@ private fun SubtitleStyleStepperButton(
 }
 
 @Composable
-private fun SubtitleStyleValueDisplay(text: String) {
+internal fun SubtitleStyleValueDisplay(text: String) {
     Box(
         modifier = Modifier
             .widthIn(min = 52.dp)
@@ -436,7 +448,7 @@ private fun SubtitleStyleValueDisplay(text: String) {
 }
 
 @Composable
-private fun SubtitleStyleColorChip(
+internal fun SubtitleStyleColorChip(
     color: Color,
     isSelected: Boolean,
     onClick: () -> Unit
@@ -477,7 +489,7 @@ private fun SubtitleStyleColorChip(
 }
 
 @Composable
-private fun SubtitleStyleToggleButton(
+internal fun SubtitleStyleToggleButton(
     isEnabled: Boolean,
     onClick: () -> Unit
 ) {

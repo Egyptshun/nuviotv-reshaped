@@ -15,6 +15,7 @@ import com.nuvio.tv.data.local.SubtitleLanguageOption
 import com.nuvio.tv.data.local.SubtitleStyleSettings
 import com.nuvio.tv.data.local.displayName
 import com.nuvio.tv.ui.theme.NuvioPrimitives
+import kotlin.math.roundToInt
 
 private val subtitleColors = listOf(
     Color.White,
@@ -134,6 +135,55 @@ internal fun PlaybackSubtitlesSection(
         onClick = { onOpenDialog(PlaybackDialog.SUBTITLE_BACKGROUND_COLOR) },
         enabled = enabled
     )
+    SliderSettingsItem(
+        title = stringResource(R.string.sub_bg_opacity),
+        value = (Color(style.backgroundColor).alpha * 100f).roundToInt().coerceIn(0, 100),
+        valueText = "${(Color(style.backgroundColor).alpha * 100f).roundToInt().coerceIn(0, 100)}%",
+        minValue = 0,
+        maxValue = 100,
+        step = 5,
+        onValueChange = { opacity ->
+            val base = Color(style.backgroundColor)
+            val rgb = if (opacity == 0) {
+                Color.Transparent
+            } else if (base.alpha <= 0f) {
+                Color.Black.copy(alpha = opacity / 100f)
+            } else {
+                base.copy(alpha = opacity / 100f)
+            }
+            onUpdate { setSubtitleBackgroundColor(rgb.toArgb()) }
+        },
+        enabled = enabled
+    )
+    SettingsToggleRow(
+        title = stringResource(R.string.sub_shadow),
+        subtitle = stringResource(R.string.sub_shadow_sub),
+        checked = style.shadowEnabled,
+        onToggle = { onUpdate { setSubtitleShadowEnabled(!style.shadowEnabled) } },
+        enabled = enabled
+    )
+    if (style.shadowEnabled) {
+        SliderSettingsItem(
+            title = stringResource(R.string.sub_shadow_opacity),
+            value = style.shadowOpacity.coerceIn(0, 100),
+            valueText = "${style.shadowOpacity.coerceIn(0, 100)}%",
+            minValue = 0,
+            maxValue = 100,
+            step = 5,
+            onValueChange = { opacity -> onUpdate { setSubtitleShadowOpacity(opacity) } },
+            enabled = enabled
+        )
+        SliderSettingsItem(
+            title = stringResource(R.string.sub_shadow_size),
+            value = style.shadowSize.coerceIn(1, 8),
+            valueText = "${style.shadowSize.coerceIn(1, 8)}",
+            minValue = 1,
+            maxValue = 8,
+            step = 1,
+            onValueChange = { size -> onUpdate { setSubtitleShadowSize(size) } },
+            enabled = enabled
+        )
+    }
     SettingsToggleRow(
         title = stringResource(R.string.sub_outline),
         subtitle = stringResource(R.string.sub_outline_sub),

@@ -2602,10 +2602,20 @@ private fun PlayerView.applySubtitleStyleIfNeeded(
             android.graphics.Typeface.DEFAULT
         }
 
-        val edgeType = if (subtitleStyle.outlineEnabled) {
-            androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE
+        val edgeType = when {
+            subtitleStyle.outlineEnabled -> androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE
+            subtitleStyle.shadowEnabled -> androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW
+            else -> androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_NONE
+        }
+        val edgeColor = if (subtitleStyle.shadowEnabled && !subtitleStyle.outlineEnabled) {
+            android.graphics.Color.argb(
+                (subtitleStyle.shadowOpacity / 100f * 255).toInt().coerceIn(0, 255),
+                0,
+                0,
+                0
+            )
         } else {
-            androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_NONE
+            subtitleStyle.outlineColor
         }
 
         setStyle(
@@ -2614,7 +2624,7 @@ private fun PlayerView.applySubtitleStyleIfNeeded(
                 subtitleStyle.backgroundColor,
                 android.graphics.Color.TRANSPARENT,
                 edgeType,
-                subtitleStyle.outlineColor,
+                edgeColor,
                 typeface
             )
         )
