@@ -466,6 +466,8 @@ class HomeEnrichmentRetryTest {
             cwEnrichmentCache = cwEnrichmentCache,
             profileManager = profileManager,
             tvRecommendationManager = mockk(relaxed = true),
+            themeDataStore = mockk(relaxed = true),
+            homeSnapshotStore = mockk(relaxed = true),
             serverCatalog = mockk(relaxed = true)
         )
         // The pipeline defers everything while the startup grace period is active, and TMDB is

@@ -20,6 +20,10 @@
     <string name="pinned_stream_source_menu_hint">Long-press OK or press Menu on a source tab to open this menu.</string>
     <string name="pinned_stream_source_pin">Pin source</string>
     <string name="pinned_stream_source_unpin">Unpin source</string>
+    <string name="player_hls_quality_auto">Auto (recommended)</string>
+    <string name="player_hls_quality_loading">Detecting HLS variants…</string>
+    <string name="player_hls_quality_title">Stream quality</string>
+    <string name="cd_hls_quality">Video quality</string>
     <string name="playback_private_viewing">Private viewing</string>
     <string name="playback_private_viewing_sub">Do not save watch progress or sync playback to Trakt, SIMKL, or MDBList</string>
     <string name="player_toolbar_audio">Audio</string>

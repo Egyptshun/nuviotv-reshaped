@@ -17,6 +17,7 @@ import com.nuvio.tv.data.remote.dto.trakt.TraktListItemsMutationResponseDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktListSummaryDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktMovieDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktPlaybackItemDto
+import com.nuvio.tv.data.remote.dto.trakt.TraktProminentListDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktRatingRequestDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktRatingsResponseDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktReorderListsRequestDto

@@ -46,8 +46,7 @@ import androidx.tv.material3.ExperimentalTvMaterial3Api
 import com.nuvio.tv.R
 import com.nuvio.tv.ui.components.PosterCardStyle
 
-@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
-@OptIn(ExperimentalTvMaterial3Api::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class, ExperimentalTvMaterial3Api::class)
 @Composable
 fun MoreLikeThisSection(
     items: List<MetaPreview>,

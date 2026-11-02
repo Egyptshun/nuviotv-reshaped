@@ -21,9 +21,13 @@ fun PlayerToolbarSettingsItems(
             title = stringResource(button.titleRes()),
             subtitle = stringResource(button.subtitleRes()),
             checked = button.storageKey !in hidden,
-            onToggle = { visible ->
+            onToggle = {
                 scope.launch {
-                    viewModel.playerSettingsDataStore.setPlayerToolbarButtonHidden(button.storageKey, hidden = !visible)
+                    val currentlyVisible = button.storageKey !in hidden
+                    viewModel.playerSettingsDataStore.setPlayerToolbarButtonHidden(
+                        button.storageKey,
+                        hidden = currentlyVisible,
+                    )
                 }
             }
         )

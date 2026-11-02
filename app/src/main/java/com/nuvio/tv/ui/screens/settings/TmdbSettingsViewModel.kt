@@ -66,6 +66,7 @@ class TmdbSettingsViewModel @Inject constructor(
                 dataStore.setUseOriginalLanguageArtwork(event.enabled)
             }
         }
+    }
 
     private fun update(action: suspend () -> Unit) {
         viewModelScope.launch { action() }

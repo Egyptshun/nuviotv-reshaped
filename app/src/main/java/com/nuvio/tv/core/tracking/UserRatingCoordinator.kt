@@ -96,7 +96,7 @@ class UserRatingCoordinator @Inject constructor(
         tmdbId: Int?,
         traktId: Int?
     ): Result<Unit> {
-        traktAuthService.executeAuthorizedRequest { authHeader ->
+        return traktAuthService.executeAuthorizedRequest { authHeader ->
             val ids = TraktIdsDto(
                 trakt = traktId,
                 imdb = imdbId,

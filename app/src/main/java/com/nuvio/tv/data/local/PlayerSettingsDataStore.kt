@@ -659,6 +659,7 @@ class PlayerSettingsDataStore @Inject constructor(
     private val osdClockEnabledKey = booleanPreferencesKey("osd_clock_enabled")
     private val skipIntroEnabledKey = booleanPreferencesKey("skip_intro_enabled")
     private val parentalGuideEnabledKey = booleanPreferencesKey("parental_guide_enabled")
+    private val autoSkipSegmentTypesKey = stringSetPreferencesKey("auto_skip_segment_types")
     private val hiddenPlayerToolbarButtonsKey = stringSetPreferencesKey("hidden_player_toolbar_buttons")
 
     // DV Keys

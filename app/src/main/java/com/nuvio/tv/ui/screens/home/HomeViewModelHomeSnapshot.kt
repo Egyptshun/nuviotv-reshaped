@@ -4,6 +4,7 @@ import android.os.SystemClock
 import androidx.lifecycle.viewModelScope
 import com.nuvio.tv.reshaped.homesnapshot.HomeSnapshot
 import com.nuvio.tv.reshaped.homesnapshot.HomeSnapshotStore
+import com.nuvio.tv.domain.model.legacyKey
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
