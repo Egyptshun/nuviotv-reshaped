@@ -168,10 +168,8 @@ import com.nuvio.tv.domain.model.WatchProgress
 import com.nuvio.tv.ui.components.LoadingIndicator
 import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewAboveProgressBar
 import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewCueTicks
-import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewSyncLayer
+import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewErrorHook
 import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewThumbnailHost
-import com.nuvio.tv.ui.screens.player.seekpreview.handleBack
-import com.nuvio.tv.ui.screens.player.seekpreview.seekPreviewSyncAction
 import android.text.format.DateFormat
 import com.nuvio.tv.ui.util.rememberRawSvgPainter
 import java.util.Date
@@ -363,7 +361,6 @@ fun PlayerScreen(
 
     val handleBackPress = handleBackPress@{
         if (externalHandoffInProgress) return@handleBackPress
-        if (viewModel.seekPreview.handleBack(uiState)) return@handleBackPress
         if (postPlayRecommendationState.canReturnToPlayer && !uiState.playbackEnded) {
             returnToPlayerFromPostPlay()
             viewModel.hideControls()
@@ -1809,7 +1806,7 @@ fun PlayerScreen(
             )
         }
 
-        SeekPreviewSyncLayer(viewModel, uiState, onDismissed = { runCatching { containerFocusRequester.requestFocus() } })
+        SeekPreviewErrorHook(viewModel, hasError = uiState.error != null)
 
         AnimatedVisibility(
             visible = seekOverlayVisible,
@@ -3173,16 +3170,6 @@ private fun PlayerControlsOverlay(
                                 onDownKey = onHideControls,
                                 onFocused = onResetHideTimer
                             )
-                            seekPreviewSyncAction(viewModel)?.let { openSync ->
-                                ControlButton(
-                                    icon = Icons.Default.Tune,
-                                    contentDescription = stringResource(R.string.cd_seek_preview_sync),
-                                    onClick = openSync,
-                                    upFocusRequester = progressUpTarget,
-                                    onDownKey = onHideControls,
-                                    onFocused = onResetHideTimer
-                                )
-                            }
                             if (uiState.playbackIssueReportsEnabled) {
                                 ReportControlButton(
                                     reportId = uiState.playbackIssueReportId,

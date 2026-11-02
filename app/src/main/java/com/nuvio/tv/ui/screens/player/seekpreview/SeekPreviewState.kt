@@ -22,6 +22,7 @@ import com.nuvio.tv.ui.screens.player.seekpreview.local.localSeekPreviewCacheKey
 import com.nuvio.tv.ui.screens.player.seekpreview.engine.SessionPreviewTrack
 import com.nuvio.tv.ui.screens.player.seekpreview.engine.PreviewPreferences
 import com.nuvio.tv.ui.screens.player.seekpreview.engine.PreviewOptions
+import com.nuvio.tv.ui.screens.player.seekpreview.grab.GrabberPreviewTrack
 import androidx.media3.exoplayer.SeekParameters
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
@@ -43,26 +44,24 @@ import kotlinx.coroutines.Job
 import kotlin.math.abs
 
 /**
- * Seek-preview (Seekr) state for one player session: the loaded track, the cue behind the
- * frame on screen, and the manual Preview Sync correction.
- *
- * Holds what the seek-preview fork (AKhalil609/NuvioTV) keeps in PlayerUiState, PlayerViewModel
- * and the runtime controller's events, so upstream player state stays untouched. The key is the
- * user's own (SeekrKeyPreferences), else BuildConfig.SEEKR_API_KEY; without one, no Seekr track
- * loads. On-device previews (see the `local` package) work with or without it.
+ * Seek-preview state for one player session: on-device Arc/local tracks, an ExoPlayer grabber
+ * for mpv and adaptive streams, optional TorBox sprites, and the cue behind the frame on screen.
  */
 class SeekPreviewState internal constructor(
     scope: CoroutineScope,
     private val controller: PlayerRuntimeController,
 ) {
     @Volatile private var activeGenerated: ArcPreviewTrack? = null
-    @Volatile private var ownedSeekr: BoundedSeekrTrack? = null
+    @Volatile private var ownedGrab: GrabberPreviewTrack? = null
     init {
         // A newly opened player (including MPV) supersedes any detached after-playback pass.
         com.nuvio.tv.ui.screens.player.seekpreview.engine.SeekThumbnails.stopSession(handBackPlayer = false)
         com.nuvio.tv.ui.screens.player.seekpreview.engine.NextEpisodeThumbs.cancel()
         com.nuvio.tv.ui.screens.player.seekpreview.engine.NextEpisodeThumbs.resume()
-        scope.coroutineContext[Job]?.invokeOnCompletion { ownedSeekr?.close() }
+        scope.coroutineContext[Job]?.invokeOnCompletion {
+            ownedGrab?.close()
+            ownedGrab = null
+        }
     }
     private val _previewCue = MutableStateFlow<SeekPreviewCue?>(null)
 
@@ -75,63 +74,10 @@ class SeekPreviewState internal constructor(
     private val _offsetMs = MutableStateFlow(0)
 
     /**
-     * Manual sync correction applied to the position before the thumbnail lookup.
-     * Session-scoped: it describes the gap between the playing release and the one the
-     * sprites were generated from, so it is dropped whenever a new track loads.
+     * Manual offset applied before TorBox thumbnail lookup (calibration).
+     * Session-scoped and reset when the stream changes.
      */
     val offsetMs: StateFlow<Int> = _offsetMs.asStateFlow()
-
-    private val _showSyncOverlay = MutableStateFlow(false)
-    val showSyncOverlay: StateFlow<Boolean> = _showSyncOverlay.asStateFlow()
-    val isSyncOverlayOpen: Boolean get() = _showSyncOverlay.value
-
-    /**
-     * The Seekr track alone. Preview Sync only exists for it: on-device frames always line up.
-     * The preview itself reads [previewTrack].
-     */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val track: StateFlow<BoundedSeekrTrack?> =
-        combine(controller.playbackTimeline, controller.uiState, LocalSeekPreviewSettings.enabled(controller.context)) {
-            timeline, state, enabled -> Triple(timeline.duration, state.currentStreamUrl, enabled)
-        }
-            .distinctUntilChanged()
-            .mapLatest { (durationMs, _, enabled) ->
-                ownedSeekr?.close()
-                ownedSeekr = null
-                // A new track describes a different release, so any manual sync dialled in
-                // for the previous one is meaningless. Drop it.
-                setOffset(0)
-                _previewCue.value = null
-                _showSyncOverlay.value = false
-                val apiKey = SeekrKeyPreferences.effectiveKey(controller.context) // Seekr hook: user key, else built-in
-                if (!enabled || apiKey.isBlank() || durationMs <= 0L) return@mapLatest null
-                val content = seekrContentFor(
-                    contentId = controller.contentId,
-                    contentType = controller.contentType,
-                    season = controller.currentSeason,
-                    episode = controller.currentEpisode
-                ) ?: return@mapLatest null
-                // Seekr hook: bounded sheet memory (see BoundedSeekrTrack), same thumbnails.
-                BoundedSeekr.loadTrack(apiKey, content, durationMs)
-                    ?.also { track ->
-                        ownedSeekr = track
-                        track.warm(runCatching { controller.currentPlaybackPositionMs() }.getOrNull() ?: 0L)
-                    }
-            }
-            .stateIn(scope, SharingStarted.Eagerly, null)
-
-    init {
-        // The sheets around the current position are decoded as soon as the controls open, so
-        // the first thumbnail of a scrub is as ready as when every sheet was kept decoded.
-        scope.launch {
-            controller.uiState
-                .map { it.showControls || it.showSeekOverlay }
-                .distinctUntilChanged()
-                .collect { open ->
-                    if (open) track.value?.warm(runCatching { controller.currentPlaybackPositionMs() }.getOrNull() ?: 0L)
-                }
-        }
-    }
 
     /** Shared TorBox previews; account setup and visual verification stay outside the core player. */
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -247,26 +193,64 @@ class SeekPreviewState internal constructor(
             .stateIn(scope, SharingStarted.Eagerly, null)
 
     /**
-     * What the preview shows: on-device frames where playback has been, Seekr elsewhere (see
-     * [HybridSeekPreviewTrack]); either alone when the other is unavailable.
+     * Headless ExoPlayer thumbnails for mpv, HLS/DASH, and gaps the Arc engine or playback tap
+     * do not cover yet.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val grabTrack: StateFlow<GrabberPreviewTrack?> =
+        combine(
+            controller.playbackTimeline.map { if (it.isLive) 0L else it.duration }
+                .distinctUntilChanged { a, b -> (a > 0L) == (b > 0L) && abs(a - b) <= 1_000L },
+            controller.uiState.map { it.currentStreamUrl }.distinctUntilChanged(),
+            LocalSeekPreviewSettings.enabled(controller.context),
+        ) { durationMs, url, enabled -> Triple(durationMs, url, enabled) }
+            .distinctUntilChanged()
+            .mapLatest { (durationMs, url, enabled) ->
+                ownedGrab?.close()
+                ownedGrab = null
+                if (!enabled || durationMs <= 0L || url.isNullOrBlank()) return@mapLatest null
+                if (controller.playbackTimeline.value.isLive || controller.isTorrentStream) return@mapLatest null
+                GrabberPreviewTrack(
+                    context = controller.context,
+                    url = url,
+                    headers = controller.getCurrentHeaders(),
+                    durationMs = durationMs,
+                ).also { ownedGrab = it }
+            }
+            .stateIn(scope, SharingStarted.Eagerly, null)
+
+    /**
+     * What the preview shows: on-device frames where available, grabber elsewhere (see
+     * [FallbackPreviewTrack]); TorBox when configured.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val previewTrack: StateFlow<SeekPreviewTrack?> =
-        combine(localTrack, track, torboxTrack) { local, seekr, torbox -> Triple(local, seekr, torbox) }
-        .transformLatest<Triple<SeekPreviewTrack?, BoundedSeekrTrack?, TorboxSpriteTrack?>, SeekPreviewTrack?> { (local, seekr, torbox) ->
-            val hybrid = if (local != null && seekr != null) HybridSeekPreviewTrack(local, SeekrPreviewTrack(seekr)) else null
-            val fallback = hybrid ?: local ?: seekr?.let(::SeekrPreviewTrack)
-            val decorated = torbox?.let { TorboxFirstPreviewTrack(it, fallback) }
-            try {
-                emit(decorated ?: fallback)
-                awaitCancellation()
-            } finally {
-                decorated?.close()
-                hybrid?.close()
-            }
-        }.stateIn(scope, SharingStarted.Eagerly, null)
+        combine(localTrack, grabTrack, torboxTrack) { local, grab, torbox -> Triple(local, grab, torbox) }
+            .transformLatest<Triple<SeekPreviewTrack?, GrabberPreviewTrack?, TorboxSpriteTrack?>, SeekPreviewTrack?> { (local, grab, torbox) ->
+                val layered = when {
+                    local != null && grab != null -> FallbackPreviewTrack(local, grab)
+                    else -> local ?: grab
+                }
+                val decorated = torbox?.let { TorboxFirstPreviewTrack(it, layered) }
+                try {
+                    emit(decorated ?: layered)
+                    awaitCancellation()
+                } finally {
+                    decorated?.close()
+                }
+            }.stateIn(scope, SharingStarted.Eagerly, null)
 
     init {
+        scope.launch {
+            controller.uiState
+                .map { it.showControls || it.showSeekOverlay }
+                .distinctUntilChanged()
+                .collect { open ->
+                    if (!open) return@collect
+                    val pos = runCatching { controller.currentPlaybackPositionMs() }.getOrNull() ?: 0L
+                    grabTrack.value?.warmUp(pos)
+                }
+        }
         // Scrubbing pauses the video and playback resumes once the scrub ends (committed or
         // abandoned), unless the viewer paused or played meanwhile. A paused player leaves the
         // CPU to the preview frames and stops the picture moving under a frame that is elsewhere.
@@ -284,6 +268,7 @@ class SeekPreviewState internal constructor(
                         }
                     } else if (pausedForScrub) {
                         pausedForScrub = false
+                        grabTrack.value?.endScrub()
                         val latest = controller.uiState.value
                         if (!latest.isPlaying && !controller.userPausedManually &&
                             latest.error == null && !latest.playbackEnded
@@ -314,21 +299,6 @@ class SeekPreviewState internal constructor(
                 }
         }
     }
-
-    /**
-     * The duration gap between the playing release and the preview source, offered as a
-     * starting point for Preview Sync. Deliberately not applied automatically: the backend
-     * anchors cues at the start, and most gaps are a different credits length around an
-     * identical body, for which shifting by the gap would make every thumbnail wrong.
-     */
-    val suggestedOffsetMs: StateFlow<Long> =
-        combine(
-            track,
-            controller.playbackTimeline.map { it.duration }.distinctUntilChanged()
-        ) { track, durationMs ->
-            val sourceDurationMs = track?.sourceDurationMs ?: 0L
-            if (sourceDurationMs > 0L && durationMs > 0L) sourceDurationMs - durationMs else 0L
-        }.stateIn(scope, SharingStarted.Eagerly, 0L)
 
     /** Spacing between preview cues, or 0 when no preview has resolved. */
     val cueIntervalMs: StateFlow<Long> =
@@ -382,18 +352,8 @@ class SeekPreviewState internal constructor(
 
     internal fun stopGenerationForError() { activeGenerated?.close() }
 
-    fun showSyncOverlay() {
-        controller.hideControls()
-        _showSyncOverlay.value = true
-    }
-
-    fun hideSyncOverlay() {
-        _showSyncOverlay.value = false
-    }
-
     /**
-     * Sets the manual correction. Only the thumbnail composables consume it, pushing it onto the
-     * track before every lookup, so this is safe at D-pad repeat rate.
+     * Sets TorBox calibration offset. Only thumbnail composables consume it.
      */
     fun setOffset(targetMs: Int) {
         val clamped = targetMs.coerceIn(SEEK_PREVIEW_OFFSET_MIN_MS, SEEK_PREVIEW_OFFSET_MAX_MS)
