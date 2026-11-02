@@ -55,7 +55,6 @@ fun MoreLikeThisSection(
     onRestoreFocusHandled: () -> Unit = {},
     onItemFocused: (MetaPreview) -> Unit = {},
     onItemClick: (MetaPreview) -> Unit,
-    onViewAllClick: (() -> Unit)? = null,
     onItemLongPress: (MetaPreview) -> Unit = {},
     isItemWatched: (MetaPreview) -> Boolean = { false },
     windowResetKey: String? = null
