@@ -91,6 +91,23 @@ class SimklMutationService internal constructor(
         return receipt.result
     }
 
+    suspend fun addRating(media: TrackingMediaReference, rating: Int): TrackingMutationResult {
+        require(media.hasResolvableIdentity) { "Simkl rating requires a media ID or title" }
+        val response = client.execute(
+            SimklApiRequest(
+                method = SimklHttpMethod.POST,
+                path = "/sync/ratings",
+                body = buildSimklRatingsMutationBody(media, rating, json),
+                retryPolicy = SimklRetryPolicy.SYNC_WRITE
+            )
+        )
+        val success = response.status in 200..299
+        return TrackingMutationResult(
+            attemptedCount = 1,
+            notFoundCount = if (success) 0 else 1
+        )
+    }
+
     internal suspend fun scrobble(
         action: TrackingScrobbleAction,
         event: TrackingScrobbleEvent

@@ -87,6 +87,7 @@ class MetaDetailsViewModel @Inject constructor(
     private val imdbEpisodeRatingsRepository: ImdbEpisodeRatingsRepository,
     private val mdbListRepository: MDBListRepository,
     private val mdbListSettingsDataStore: MDBListSettingsDataStore,
+    private val mdbListAuthRepository: com.nuvio.tv.data.mdblist.MdbListAuthRepository,
     private val libraryRepository: LibraryRepository,
     private val watchProgressRepository: WatchProgressRepository,
     private val watchedItemsPreferences: WatchedItemsPreferences,
@@ -106,6 +107,7 @@ class MetaDetailsViewModel @Inject constructor(
     private val metaDetailsSessionState: MetaDetailsSessionState,
     private val watchedSeriesStateHolder: com.nuvio.tv.data.local.WatchedSeriesStateHolder,
     val posterOptions: com.nuvio.tv.ui.components.posteroptions.PosterOptionsController,
+    private val userRatingCoordinator: com.nuvio.tv.core.tracking.UserRatingCoordinator,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private val itemId: String = savedStateHandle["itemId"] ?: ""
@@ -167,6 +169,7 @@ class MetaDetailsViewModel @Inject constructor(
         observeMetaViewSettings()
         observeTrailerAutoplaySettings()
         observeTraktCommentsAvailability()
+        observeUserRatingAvailability()
         observeLibraryState()
         observeWatchProgress()
         observeMovieResumeProgress()
@@ -379,6 +382,72 @@ class MetaDetailsViewModel @Inject constructor(
             MetaDetailsEvent.OnRemovalCancelled -> cancelPickerRemoval()
             MetaDetailsEvent.OnClearMessage -> clearMessage()
             MetaDetailsEvent.OnLifecyclePause -> handleLifecyclePause()
+            MetaDetailsEvent.OnUserRatingClick -> openUserRatingDialog()
+            MetaDetailsEvent.OnUserRatingDismiss -> dismissUserRatingDialog()
+            is MetaDetailsEvent.OnUserRatingSubmit -> submitUserRating(event.rating)
+        }
+    }
+
+    private fun observeUserRatingAvailability() {
+        viewModelScope.launch {
+            combine(
+                traktAuthDataStore.isAuthenticated,
+                simklAuthRepository.state.map { state -> state.isAuthenticated },
+                mdbListAuthRepository.state.map { state -> state.isAuthenticated }
+            ) { trakt, simkl, mdblist -> trakt || simkl || mdblist }
+                .distinctUntilChanged()
+                .collectLatest { available ->
+                    _uiState.update { state ->
+                        if (state.canSubmitUserRating == available) state
+                        else state.copy(canSubmitUserRating = available)
+                    }
+                }
+        }
+    }
+
+    private fun openUserRatingDialog() {
+        if (!_uiState.value.canSubmitUserRating) return
+        _uiState.update { it.copy(showUserRatingDialog = true) }
+    }
+
+    private fun dismissUserRatingDialog() {
+        _uiState.update { it.copy(showUserRatingDialog = false) }
+    }
+
+    private fun submitUserRating(rating: Int) {
+        val meta = _uiState.value.meta ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(userRatingSubmitPending = true) }
+            val parsedIds = parseContentIds(meta.id)
+            val imdbId = meta.imdbId?.takeIf { it.isNotBlank() }
+                ?: parsedIds.imdb
+                ?: extractImdbId(meta.id)
+            val tmdbLookupType = when (meta.type) {
+                ContentType.MOVIE -> "movie"
+                else -> "series"
+            }
+            val tmdbId = parsedIds.tmdb
+                ?: tmdbService.ensureTmdbId(meta.id, tmdbLookupType, fallbackImdbId = meta.imdbId)?.toInt()
+            val traktId = parsedIds.trakt
+            val result = userRatingCoordinator.submitRating(
+                meta = meta,
+                rating = rating,
+                imdbId = imdbId,
+                tmdbId = tmdbId,
+                traktId = traktId
+            )
+            _uiState.update {
+                it.copy(
+                    userRatingSubmitPending = false,
+                    showUserRatingDialog = false
+                )
+            }
+            when {
+                result.anySuccess -> showMessage(context.getString(R.string.user_rating_saved))
+                result.trakt == null && result.simkl == null && result.mdblist == null ->
+                    showMessage(context.getString(R.string.user_rating_not_connected), isError = true)
+                else -> showMessage(context.getString(R.string.user_rating_failed), isError = true)
+            }
         }
     }
 

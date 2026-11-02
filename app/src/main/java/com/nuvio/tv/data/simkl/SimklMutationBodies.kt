@@ -54,6 +54,23 @@ fun buildSimklHistoryRemovalBody(
     )
 )
 
+fun buildSimklRatingsMutationBody(
+    media: TrackingMediaReference,
+    rating: Int,
+    json: Json = SimklMutationJson
+): String {
+    val score = rating.coerceIn(1, 10)
+    val ids = media.ids.toSimklJsonObjectOrNull()
+        ?: throw IllegalArgumentException("Simkl rating requires resolvable IDs")
+    val item = SimklRatingItemDto(rating = score, ids = ids)
+    val body = when (media.kind) {
+        TrackingMediaKind.MOVIE -> SimklRatingsMutationRequestDto(movies = listOf(item))
+        TrackingMediaKind.ANIME -> SimklRatingsMutationRequestDto(anime = listOf(item))
+        TrackingMediaKind.SHOW -> SimklRatingsMutationRequestDto(shows = listOf(item))
+    }
+    return json.encodeToString(body)
+}
+
 fun buildSimklScrobbleBody(
     event: TrackingScrobbleEvent,
     json: Json = SimklMutationJson
@@ -286,4 +303,17 @@ private data class SimklScrobbleMediaDto(
     val title: String? = null,
     val year: Int? = null,
     val ids: JsonObject? = null
+)
+
+@Serializable
+private data class SimklRatingsMutationRequestDto(
+    val movies: List<SimklRatingItemDto> = emptyList(),
+    val shows: List<SimklRatingItemDto> = emptyList(),
+    val anime: List<SimklRatingItemDto> = emptyList()
+)
+
+@Serializable
+private data class SimklRatingItemDto(
+    val rating: Int,
+    val ids: JsonObject
 )

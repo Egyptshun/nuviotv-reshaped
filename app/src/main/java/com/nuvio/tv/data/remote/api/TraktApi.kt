@@ -17,7 +17,8 @@ import com.nuvio.tv.data.remote.dto.trakt.TraktListItemsMutationResponseDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktListSummaryDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktMovieDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktPlaybackItemDto
-import com.nuvio.tv.data.remote.dto.trakt.TraktProminentListDto
+import com.nuvio.tv.data.remote.dto.trakt.TraktRatingRequestDto
+import com.nuvio.tv.data.remote.dto.trakt.TraktRatingsResponseDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktReorderListsRequestDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktReorderListsResponseDto
 import com.nuvio.tv.data.remote.dto.trakt.TraktRefreshTokenRequestDto
@@ -247,6 +248,12 @@ interface TraktApi {
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20
     ): Response<List<TraktProminentListDto>>
+
+    @POST("sync/ratings")
+    suspend fun addOrUpdateRatings(
+        @Header("Authorization") authorization: String,
+        @Body body: TraktRatingRequestDto
+    ): Response<TraktRatingsResponseDto>
 
     @GET("lists/{id}")
     suspend fun getPublicList(

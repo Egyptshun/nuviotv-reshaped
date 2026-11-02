@@ -957,6 +957,8 @@ fun MetaDetailsScreen(
                     onPlayButtonFocused = { viewModel.onEvent(MetaDetailsEvent.OnPlayButtonFocused) },
                     onToggleLibrary = { viewModel.onEvent(MetaDetailsEvent.OnToggleLibrary) },
                     onLibraryLongPress = { viewModel.onEvent(MetaDetailsEvent.OnLibraryLongPress) },
+                    showUserRatingButton = uiState.canSubmitUserRating,
+                    onUserRatingClick = { viewModel.onEvent(MetaDetailsEvent.OnUserRatingClick) },
                     onToggleMovieWatched = { viewModel.onEvent(MetaDetailsEvent.OnToggleMovieWatched) },
                     onToggleEpisodeWatched = { video ->
                         viewModel.onEvent(MetaDetailsEvent.OnToggleEpisodeWatched(video))
@@ -1126,6 +1128,14 @@ fun MetaDetailsScreen(
             )
         }
 
+        if (uiState.showUserRatingDialog) {
+            UserRatingDialog(
+                titleName = uiState.meta?.name.orEmpty(),
+                onDismiss = { viewModel.onEvent(MetaDetailsEvent.OnUserRatingDismiss) },
+                onSubmit = { rating -> viewModel.onEvent(MetaDetailsEvent.OnUserRatingSubmit(rating)) }
+            )
+        }
+
         val message = uiState.userMessage
         if (!message.isNullOrBlank()) {
             Box(
@@ -1258,6 +1268,8 @@ private fun MetaDetailsContent(
     onPlayButtonFocused: () -> Unit,
     onToggleLibrary: () -> Unit,
     onLibraryLongPress: () -> Unit,
+    showUserRatingButton: Boolean = false,
+    onUserRatingClick: () -> Unit = {},
     onToggleMovieWatched: () -> Unit,
     onToggleEpisodeWatched: (Video) -> Unit,
     onMarkSeasonWatched: (Int) -> Unit,
@@ -2490,6 +2502,8 @@ private fun MetaDetailsContent(
                         isInLibrary = isInLibrary,
                         onToggleLibrary = onToggleLibrary,
                         onLibraryLongPress = onLibraryLongPress,
+                        showUserRatingButton = showUserRatingButton,
+                        onUserRatingClick = onUserRatingClick,
                         isMovieWatched = isMovieWatched,
                         isMovieWatchedPending = isMovieWatchedPending,
                         onToggleMovieWatched = onToggleMovieWatched,
