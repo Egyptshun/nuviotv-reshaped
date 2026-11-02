@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_toolbar_section">Player toolbar</string>
+    <string name="player_toolbar_subtitle">Subtitles</string>
+    <string name="player_toolbar_subtitle_sub">Show the subtitles button on the control bar.</string>
+    <string name="player_toolbar_audio">Audio</string>
+    <string name="player_toolbar_audio_sub">Show the audio tracks button.</string>
+    <string name="player_toolbar_chapters">Chapters</string>
+    <string name="player_toolbar_chapters_sub">Show the chapters button when chapters exist.</string>
+    <string name="player_toolbar_sources">Sources</string>
+    <string name="player_toolbar_sources_sub">Show the stream sources button.</string>
+    <string name="player_toolbar_episodes">Episodes</string>
+    <string name="player_toolbar_episodes_sub">Show the episodes list button for series.</string>
+    <string name="player_toolbar_party">Watch party</string>
+    <string name="player_toolbar_party_sub">Show the party button when party mode is available.</string>
+    <string name="player_toolbar_more">More actions</string>
+    <string name="player_toolbar_more_sub">Show the overflow chevron for speed, aspect ratio, and info.</string>
+</resources>
