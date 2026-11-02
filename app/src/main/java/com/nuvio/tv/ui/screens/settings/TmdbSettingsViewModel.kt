@@ -62,8 +62,10 @@ class TmdbSettingsViewModel @Inject constructor(
             is TmdbSettingsEvent.ToggleTrailers -> update { dataStore.setUseTrailers(event.enabled) }
             is TmdbSettingsEvent.ToggleMoreLikeThis -> update { dataStore.setUseMoreLikeThis(event.enabled) }
             is TmdbSettingsEvent.ToggleCollections -> update { dataStore.setUseCollections(event.enabled) }
+            is TmdbSettingsEvent.ToggleOriginalLanguageArtwork -> update {
+                dataStore.setUseOriginalLanguageArtwork(event.enabled)
+            }
         }
-    }
 
     private fun update(action: suspend () -> Unit) {
         viewModelScope.launch { action() }
@@ -84,7 +86,8 @@ data class TmdbSettingsUiState(
     val useEpisodes: Boolean = true,
     val useTrailers: Boolean = true,
     val useMoreLikeThis: Boolean = true,
-    val useCollections: Boolean = true
+    val useCollections: Boolean = true,
+    val useOriginalLanguageArtwork: Boolean = false
 ) {
     fun fromSettings(settings: TmdbSettings): TmdbSettingsUiState = copy(
         enabled = settings.enabled,
@@ -100,7 +103,8 @@ data class TmdbSettingsUiState(
         useEpisodes = settings.useEpisodes,
         useTrailers = settings.useTrailers,
         useMoreLikeThis = settings.useMoreLikeThis,
-        useCollections = settings.useCollections
+        useCollections = settings.useCollections,
+        useOriginalLanguageArtwork = settings.useOriginalLanguageArtwork
     )
 }
 
@@ -119,4 +123,5 @@ sealed class TmdbSettingsEvent {
     data class ToggleTrailers(val enabled: Boolean) : TmdbSettingsEvent()
     data class ToggleMoreLikeThis(val enabled: Boolean) : TmdbSettingsEvent()
     data class ToggleCollections(val enabled: Boolean) : TmdbSettingsEvent()
+    data class ToggleOriginalLanguageArtwork(val enabled: Boolean) : TmdbSettingsEvent()
 }

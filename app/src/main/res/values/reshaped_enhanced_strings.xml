@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tmdb_original_language_artwork_title">Original-language artwork</string>
+    <string name="tmdb_original_language_artwork_subtitle">Use TMDB original titles, posters, and backdrops instead of localized artwork.</string>
+</resources>
