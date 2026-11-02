@@ -16,6 +16,7 @@ import com.nuvio.tv.data.repository.SkipInterval
 import com.nuvio.tv.domain.model.EpisodeOptionsOverlayStyle
 import com.nuvio.tv.domain.model.MetaCastMember
 import com.nuvio.tv.domain.model.Stream
+import com.nuvio.tv.reshaped.playerquality.HlsQualitySelectionState
 import com.nuvio.tv.domain.model.Subtitle
 import com.nuvio.tv.domain.model.Video
 import com.nuvio.tv.domain.model.WatchProgress
@@ -116,6 +117,9 @@ data class PlayerUiState(
     val nightMode: NightMode = NightMode.OFF,
     val isNightModeAvailable: Boolean = false,
     val showAudioOverlay: Boolean = false,
+    val showHlsQualityOverlay: Boolean = false,
+    val hlsQualityState: HlsQualitySelectionState = HlsQualitySelectionState(),
+    val selectedHlsQualityId: String? = null,
     val showSubtitleOverlay: Boolean = false,
     val showSubtitleStylePanel: Boolean = false,
     val showSubtitleTimingDialog: Boolean = false,
@@ -337,6 +341,9 @@ sealed class PlayerEvent {
     data class OnSelectAddonSubtitle(val subtitle: Subtitle) : PlayerEvent()
     data class OnSetPlaybackSpeed(val speed: Float) : PlayerEvent()
     data object OnToggleControls : PlayerEvent()
+    data object OnShowHlsQualityOverlay : PlayerEvent()
+    data object OnDismissHlsQualityOverlay : PlayerEvent()
+    data class OnSelectHlsQuality(val qualityId: String?) : PlayerEvent()
     data object OnShowAudioOverlay : PlayerEvent()
     data object OnShowSubtitleOverlay : PlayerEvent()
     data object OnOpenSubtitleStylePanel : PlayerEvent()
