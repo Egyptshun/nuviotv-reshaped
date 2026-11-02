@@ -30,6 +30,8 @@ data class Meta(
     val country: String?,
     val awards: String?,
     val language: String?,
+    val budget: Long? = null,
+    val revenue: Long? = null,
     val links: List<MetaLink>,
     val trailerYtIds: List<String> = emptyList(),
     val imdbId: String? = null,

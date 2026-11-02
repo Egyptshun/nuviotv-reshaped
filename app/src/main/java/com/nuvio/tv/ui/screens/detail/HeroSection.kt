@@ -365,6 +365,7 @@ fun HeroContentSection(
                         showFullReleaseDate = showFullReleaseDate,
                         tmdbRating = tmdbRating
                     )
+                    MovieFinancialInfoRow(meta = meta)
                 }
             }
         }
