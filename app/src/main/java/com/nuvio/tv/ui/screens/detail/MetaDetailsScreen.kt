@@ -418,6 +418,7 @@ fun MetaDetailsScreen(
     onReturnFocusConsumed: () -> Unit = {},
     onNavigateToCastDetail: (personId: Int, personName: String, preferCrew: Boolean) -> Unit = { _, _, _ -> },
     onNavigateToTmdbEntityBrowse: (entityKind: String, entityId: Int, entityName: String, sourceType: String) -> Unit = { _, _, _, _ -> },
+    onNavigateToMoreLikeThisSeeAll: (contentId: String, itemType: String, source: String, addonBaseUrl: String?, title: String) -> Unit = { _, _, _, _, _ -> },
     onNavigateToDetail: (itemId: String, itemType: String, addonBaseUrl: String?) -> Unit = { _, _, _ -> },
     onPlayClick: (
         videoId: String,
@@ -1085,6 +1086,7 @@ fun MetaDetailsScreen(
                     onSharedTrailerFocusRestored = { restoreSharedTrailerFocusToken = 0 },
                     onNavigateToCastDetail = onNavigateToCastDetail,
                     onNavigateToTmdbEntityBrowse = onNavigateToTmdbEntityBrowse,
+                    onNavigateToMoreLikeThisSeeAll = onNavigateToMoreLikeThisSeeAll,
                     onNavigateToDetail = onNavigateToDetail,
                     onPosterLongPress = { item -> viewModel.posterOptions.show(item, null) }
                 )
@@ -1303,6 +1305,7 @@ private fun MetaDetailsContent(
     onSharedTrailerFocusRestored: () -> Unit,
     onNavigateToCastDetail: (personId: Int, personName: String, preferCrew: Boolean) -> Unit = { _, _, _ -> },
     onNavigateToTmdbEntityBrowse: (entityKind: String, entityId: Int, entityName: String, sourceType: String) -> Unit = { _, _, _, _ -> },
+    onNavigateToMoreLikeThisSeeAll: (contentId: String, itemType: String, source: String, addonBaseUrl: String?, title: String) -> Unit = { _, _, _, _, _ -> },
     onNavigateToDetail: (itemId: String, itemType: String, addonBaseUrl: String?) -> Unit = { _, _, _ -> },
     onPosterLongPress: (MetaPreview) -> Unit = {}
 ) {
@@ -2765,6 +2768,17 @@ private fun MetaDetailsContent(
                                     windowResetKey = meta.id,
                                     onItemLongPress = { item ->
                                         onPosterLongPress(item)
+                                    },
+                                    onViewAllClick = moreLikeThisSource?.let { source ->
+                                        {
+                                            onNavigateToMoreLikeThisSeeAll(
+                                                meta.id,
+                                                meta.apiType,
+                                                source.name.lowercase(),
+                                                null,
+                                                meta.name
+                                            )
+                                        }
                                     }
                                 )
                             }

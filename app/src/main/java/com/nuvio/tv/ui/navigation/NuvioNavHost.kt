@@ -390,6 +390,17 @@ private fun PlaybackNavHost(
                         )
                     )
                 },
+                onNavigateToMoreLikeThisSeeAll = { contentId, itemType, source, addonBaseUrl, title ->
+                    childNav.navigate(
+                        Screen.MoreLikeThisSeeAll.createRoute(
+                            contentId = contentId,
+                            itemType = itemType,
+                            source = source,
+                            addonBaseUrl = addonBaseUrl,
+                            title = title
+                        )
+                    )
+                },
                 onNavigateToDetail = { itemId, itemType, addonBaseUrl ->
                     childNav.navigateNestedDetail(itemId, itemType, addonBaseUrl)
                 },

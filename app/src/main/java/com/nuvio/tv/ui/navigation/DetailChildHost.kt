@@ -38,6 +38,7 @@ import androidx.navigation.navArgument
 import com.nuvio.tv.ui.screens.cast.CastDetailScreen
 import java.util.WeakHashMap
 import com.nuvio.tv.ui.screens.detail.MetaDetailsScreen
+import com.nuvio.tv.ui.screens.detail.MoreLikeThisSeeAllScreen
 import com.nuvio.tv.ui.screens.tmdb.TmdbEntityBrowseScreen
 import com.nuvio.tv.ui.theme.NuvioTheme
 
@@ -189,6 +190,32 @@ internal fun DetailChildHost(
                     }
                 }
                 composable(
+                    route = Screen.MoreLikeThisSeeAll.route,
+                    arguments = listOf(
+                        navArgument("contentId") { type = NavType.StringType },
+                        navArgument("itemType") { type = NavType.StringType },
+                        navArgument("source") { type = NavType.StringType },
+                        navArgument("addonBaseUrl") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                        navArgument("title") {
+                            type = NavType.StringType
+                            defaultValue = ""
+                        }
+                    )
+                ) {
+                    Box(modifier = Modifier.fillMaxSize().background(NuvioTheme.colors.Background)) {
+                        MoreLikeThisSeeAllScreen(
+                            onBackPress = { childNav.popBackStack() },
+                            onNavigateToDetail = { itemId, itemType, addonBaseUrl ->
+                                childNav.navigateNestedDetail(itemId, itemType, addonBaseUrl)
+                            }
+                        )
+                    }
+                }
+                composable(
                     route = Screen.Detail.route,
                     arguments = listOf(
                         navArgument("itemId") { type = NavType.StringType },
@@ -251,6 +278,17 @@ internal fun DetailChildHost(
                                 )
                             )
                         },
+                        onNavigateToMoreLikeThisSeeAll = { contentId, itemType, source, addonBaseUrl, title ->
+                            childNav.navigate(
+                                Screen.MoreLikeThisSeeAll.createRoute(
+                                    contentId = contentId,
+                                    itemType = itemType,
+                                    source = source,
+                                    addonBaseUrl = addonBaseUrl,
+                                    title = title
+                                )
+                            )
+                        },
                         onNavigateToDetail = { itemId, itemType, addonBaseUrl ->
                             childNav.navigateNestedDetail(itemId, itemType, addonBaseUrl)
                         },
@@ -299,6 +337,18 @@ private fun NavBackStackEntry.toSavedChildRoute(): String? {
                 entityId = args.getInt("entityId"),
                 entityName = entityName,
                 sourceType = args.getString("sourceType") ?: "tv"
+            )
+        }
+        Screen.MoreLikeThisSeeAll.route -> {
+            val contentId = args.getString("contentId") ?: return null
+            val itemType = args.getString("itemType") ?: return null
+            val source = args.getString("source") ?: return null
+            Screen.MoreLikeThisSeeAll.createRoute(
+                contentId = contentId,
+                itemType = itemType,
+                source = source,
+                addonBaseUrl = args.getString("addonBaseUrl")?.takeIf { it.isNotBlank() },
+                title = args.getString("title").orEmpty()
             )
         }
         Screen.Detail.route -> {

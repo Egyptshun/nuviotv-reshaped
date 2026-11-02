@@ -3,6 +3,7 @@
     <string name="advanced_section_network">Network</string>
     <string name="detail_budget">Budget</string>
     <string name="detail_revenue">Revenue</string>
+    <string name="more_like_this_see_all_title">More Like This</string>
     <string name="pinned_stream_source_chip_pinned">Pinned source</string>
     <string name="pinned_stream_source_menu_close">Close</string>
     <string name="pinned_stream_source_menu_hint">Long-press OK or press Menu on a source tab to open this menu.</string>

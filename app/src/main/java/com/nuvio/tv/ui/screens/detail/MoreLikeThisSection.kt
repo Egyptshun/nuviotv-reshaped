@@ -35,9 +35,19 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import com.nuvio.tv.domain.model.MetaPreview
 import com.nuvio.tv.ui.components.GridContentCard
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.stringResource
+import androidx.tv.material3.Border
+import androidx.tv.material3.Card
+import androidx.tv.material3.CardDefaults
+import androidx.tv.material3.ExperimentalTvMaterial3Api
+import com.nuvio.tv.R
 import com.nuvio.tv.ui.components.PosterCardStyle
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalTvMaterial3Api::class)
 @Composable
 fun MoreLikeThisSection(
     items: List<MetaPreview>,
@@ -55,6 +65,7 @@ fun MoreLikeThisSection(
     onRestoreFocusHandled: () -> Unit = {},
     onItemFocused: (MetaPreview) -> Unit = {},
     onItemClick: (MetaPreview) -> Unit,
+    onViewAllClick: (() -> Unit)? = null,
     onItemLongPress: (MetaPreview) -> Unit = {},
     isItemWatched: (MetaPreview) -> Boolean = { false },
     windowResetKey: String? = null
@@ -194,6 +205,39 @@ fun MoreLikeThisSection(
                                 .width(landscapeStyle.width)
                                 .padding(start = NuvioTheme.spacing.xxs, end = NuvioTheme.spacing.xxs, top = NuvioTheme.spacing.xxs)
                         )
+                    }
+                }
+            }
+            if (onViewAllClick != null && items.size >= 6) {
+                item(key = "more_like_this_see_all") {
+                    val seeAllShape = RoundedCornerShape(landscapeStyle.cornerRadius)
+                    Card(
+                        onClick = onViewAllClick,
+                        modifier = Modifier
+                            .width(landscapeStyle.width)
+                            .height(landscapeStyle.height),
+                        shape = CardDefaults.shape(shape = seeAllShape),
+                        colors = CardDefaults.colors(
+                            containerColor = NuvioTheme.colors.BackgroundCard,
+                            focusedContainerColor = NuvioTheme.colors.BackgroundCard
+                        ),
+                        border = CardDefaults.border(
+                            focusedBorder = Border(
+                                border = NuvioTheme.focusRing.border(landscapeStyle.focusedBorderWidth),
+                                shape = seeAllShape
+                            )
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = androidx.compose.ui.Alignment.Center
+                        ) {
+                            Text(
+                                text = stringResource(R.string.action_see_all),
+                                style = MaterialTheme.typography.titleSmall,
+                                color = NuvioTheme.colors.TextSecondary
+                            )
+                        }
                     }
                 }
             }
