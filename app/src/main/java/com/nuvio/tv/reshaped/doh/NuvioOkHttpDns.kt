@@ -1,6 +1,6 @@
 package com.nuvio.tv.reshaped.doh
 
-import com.nuvio.tv.reshaped.doh.NuvioOkHttpDns
+import com.nuvio.tv.core.network.IPv4FirstDns
 import okhttp3.Dns
 
 /** IPv4-first ordering over system or DNS-over-HTTPS, per user network settings. */
