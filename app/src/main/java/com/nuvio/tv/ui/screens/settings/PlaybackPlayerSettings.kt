@@ -37,6 +37,13 @@ internal fun PlaybackPlayerSection(
         onToggle = { onUpdate { setAutoSwitchInternalPlayerOnError(!settings.autoSwitchInternalPlayerOnError) } },
         enabled = !usesExternalPlayer
     )
+    SettingsToggleRow(
+        title = stringResource(R.string.playback_private_viewing),
+        subtitle = stringResource(R.string.playback_private_viewing_sub),
+        checked = settings.privateViewingEnabled,
+        onToggle = { onUpdate { setPrivateViewingEnabled(!settings.privateViewingEnabled) } },
+        enabled = !usesExternalPlayer
+    )
 
     if (settings.playerPreference != PlayerPreference.INTERNAL) {
         SettingsSectionLabel(text = stringResource(R.string.playback_external_player_label))

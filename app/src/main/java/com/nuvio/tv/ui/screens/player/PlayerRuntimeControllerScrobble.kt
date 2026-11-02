@@ -107,7 +107,7 @@ internal fun PlayerRuntimeController.preparePlaybackBeforeStart(
         if (partyPositionMs != null) {
             pendingResumeProgress = null
             _uiState.update { it.copy(pendingSeekPosition = partyPositionMs) }
-        } else if (loadSavedProgress) {
+        } else if (loadSavedProgress && !isPrivateViewingActive()) {
             recordLoadingDiagnosticEvent(
                 phase = "loading_saved_progress",
                 message = context.getString(com.nuvio.tv.R.string.player_loading_preparing)

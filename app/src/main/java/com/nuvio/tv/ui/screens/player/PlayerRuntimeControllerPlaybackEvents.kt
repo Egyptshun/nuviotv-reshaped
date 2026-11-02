@@ -789,6 +789,7 @@ private fun String.reportSafeHost(): String {
 }
 
 internal fun PlayerRuntimeController.saveWatchProgressIfNeeded() {
+    if (isPrivateViewingActive()) return
     if (!hasRenderedFirstFrame) return
     // A live stream's position is no point to come back to: resuming there seeks past what the
     // stream holds and nothing plays
@@ -807,6 +808,7 @@ internal fun PlayerRuntimeController.saveWatchProgressIfNeeded() {
 }
 
 internal fun PlayerRuntimeController.saveWatchProgress() {
+    if (isPrivateViewingActive()) return
     if (!hasRenderedFirstFrame) return
     if (_playbackTimeline.value.isLive) return
     val currentPosition = currentPlaybackPositionMs() ?: return
@@ -907,6 +909,7 @@ internal fun PlayerRuntimeController.currentWatchProgress(
 )
 
 internal fun PlayerRuntimeController.saveWatchProgressInternal(position: Long, duration: Long, syncRemote: Boolean = true) {
+    if (isPrivateViewingActive()) return
     if (contentType.equals("cloud", ignoreCase = true)) {
         saveCloudLibraryProgress(position, duration, completed = false)
         return
@@ -1017,6 +1020,10 @@ internal fun PlayerRuntimeController.buildScrobbleItem(): TrackingMediaReference
 
 internal fun PlayerRuntimeController.emitScrobbleStart() {
     logScrobbleDiagnostic("start_evaluated")
+    if (isPrivateViewingActive()) {
+        logScrobbleDiagnostic("start_skipped", "reason=private_viewing")
+        return
+    }
     if (isShortPlaceholderStream()) {
         logScrobbleDiagnostic("start_skipped", "reason=short_placeholder")
         return
@@ -1074,6 +1081,10 @@ internal fun PlayerRuntimeController.emitScrobbleStart() {
 
 internal fun PlayerRuntimeController.emitScrobbleStop(progressPercent: Float? = null) {
     logScrobbleDiagnostic("stop_evaluated", "providedProgress=${progressPercent ?: "none"}")
+    if (isPrivateViewingActive()) {
+        logScrobbleDiagnostic("stop_skipped", "reason=private_viewing")
+        return
+    }
     if (isShortPlaceholderStream()) {
         logScrobbleDiagnostic("stop_skipped", "reason=short_placeholder")
         return
@@ -1108,6 +1119,10 @@ internal fun PlayerRuntimeController.emitScrobbleStop(progressPercent: Float? = 
 
 internal fun PlayerRuntimeController.emitScrobblePause(progressPercent: Float? = null) {
     logScrobbleDiagnostic("pause_evaluated", "providedProgress=${progressPercent ?: "none"}")
+    if (isPrivateViewingActive()) {
+        logScrobbleDiagnostic("pause_skipped", "reason=private_viewing")
+        return
+    }
     if (isShortPlaceholderStream()) {
         logScrobbleDiagnostic("pause_skipped", "reason=short_placeholder")
         return

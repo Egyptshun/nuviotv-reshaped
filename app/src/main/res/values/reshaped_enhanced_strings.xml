@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="playback_private_viewing">Private viewing</string>
+    <string name="playback_private_viewing_sub">Do not save watch progress or sync playback to Trakt, SIMKL, or MDBList</string>
+</resources>
