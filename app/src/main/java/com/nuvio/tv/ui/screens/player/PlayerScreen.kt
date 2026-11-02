@@ -3086,7 +3086,6 @@ private fun PlayerControlsOverlay(
                         )
                     }
 
-<<<<<<< HEAD
                     if (hasHlsQualityControl) {
                         ControlButton(
                             icon = Icons.Default.Hd,
@@ -3098,10 +3097,7 @@ private fun PlayerControlsOverlay(
                         )
                     }
 
-                    if (hasAudioControl) {
-=======
                     if (hasAudioControl && com.nuvio.tv.ui.reshaped.player.PlayerToolbarButtonId.AUDIO.storageKey !in hiddenToolbarButtons) {
->>>>>>> origin/cursor/enhanced-player-button-layout-6260
                         ControlButton(
                             icon = Icons.AutoMirrored.Filled.VolumeUp,
                             iconPainter = customAudioPainter,
