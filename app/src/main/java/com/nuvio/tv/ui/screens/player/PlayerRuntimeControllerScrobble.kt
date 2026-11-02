@@ -20,6 +20,7 @@ internal fun PlayerRuntimeController.preparePlaybackBeforeStart(
         currentHeaders = playbackHeaders
         _uiState.update { it.copy(currentStreamUrl = playbackUrl) }
     }
+    resetHlsQualityForNewStream(playbackUrl)
 
     logSwitchTrace(
         stage = "prepare-playback-before-start",

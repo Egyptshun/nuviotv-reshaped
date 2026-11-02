@@ -59,7 +59,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Hd
 import androidx.compose.material.icons.automirrored.filled.Toc
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -1642,6 +1642,7 @@ fun PlayerScreen(
                 },
                 partyActive = partyState.party != null,
                 onShowAudioDialog = { viewModel.onEvent(PlayerEvent.OnShowAudioOverlay) },
+                onShowHlsQualityDialog = { viewModel.onEvent(PlayerEvent.OnShowHlsQualityOverlay) },
                 onShowSubtitleDialog = { viewModel.onEvent(PlayerEvent.OnShowSubtitleOverlay) },
                 onShowSpeedDialog = { viewModel.onEvent(PlayerEvent.OnShowSpeedDialog) },
                 onToggleAspectRatio = {
@@ -2066,6 +2067,15 @@ fun PlayerScreen(
                 )
             }
         }
+
+        HlsQualitySidePanel(
+            visible = uiState.showHlsQualityOverlay,
+            state = uiState.hlsQualityState,
+            selectedQualityId = uiState.selectedHlsQualityId,
+            onQualitySelected = { viewModel.onEvent(PlayerEvent.OnSelectHlsQuality(it)) },
+            onDismiss = { viewModel.onEvent(PlayerEvent.OnDismissHlsQualityOverlay) },
+            modifier = Modifier.align(Alignment.CenterEnd)
+        )
 
         // Audio track dialog
         AudioSelectionOverlay(
@@ -2797,6 +2807,7 @@ private fun PlayerControlsOverlay(
     onShowPartyPanel: (() -> Unit)?,
     partyActive: Boolean,
     onShowAudioDialog: () -> Unit,
+    onShowHlsQualityDialog: () -> Unit = {},
     onShowSubtitleDialog: () -> Unit,
     onShowSpeedDialog: () -> Unit,
     onToggleAspectRatio: () -> Unit,
@@ -3012,6 +3023,7 @@ private fun PlayerControlsOverlay(
                     val hasEpisodeContext = uiState.currentSeason != null && uiState.currentEpisode != null
                     val hasSubtitleControl = uiState.subtitleTracks.isNotEmpty() || uiState.addonSubtitles.isNotEmpty()
                     val hasAudioControl = uiState.audioTracks.isNotEmpty()
+                    val hasHlsQualityControl = uiState.hlsQualityState.hasSelectableQualities
                     val showNextEpisodeButton = uiState.nextEpisode?.hasAired == true &&
                         (uiState.postPlayMode as? PostPlayMode.AutoPlay)?.let {
                             !it.searching && it.countdownSec == null
@@ -3045,6 +3057,17 @@ private fun PlayerControlsOverlay(
                             iconPainter = customSubtitlePainter,
                             contentDescription = stringResource(R.string.cd_subtitles),
                             onClick = onShowSubtitleDialog,
+                            upFocusRequester = progressUpTarget,
+                            onDownKey = onHideControls,
+                            onFocused = onResetHideTimer
+                        )
+                    }
+
+                    if (hasHlsQualityControl) {
+                        ControlButton(
+                            icon = Icons.Default.Hd,
+                            contentDescription = stringResource(R.string.cd_hls_quality),
+                            onClick = onShowHlsQualityDialog,
                             upFocusRequester = progressUpTarget,
                             onDownKey = onHideControls,
                             onFocused = onResetHideTimer

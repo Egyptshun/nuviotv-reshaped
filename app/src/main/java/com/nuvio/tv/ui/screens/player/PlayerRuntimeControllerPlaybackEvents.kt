@@ -1703,6 +1703,7 @@ fun PlayerRuntimeController.onEvent(
             _uiState.update {
                 it.copy(
                     showAudioOverlay = true,
+                    showHlsQualityOverlay = false,
                     showSubtitleOverlay = false,
                     showSubtitleStylePanel = false,
                     showMoreDialog = false,
@@ -1712,6 +1713,9 @@ fun PlayerRuntimeController.onEvent(
                 )
             }
         }
+        PlayerEvent.OnShowHlsQualityOverlay -> showHlsQualityOverlay()
+        PlayerEvent.OnDismissHlsQualityOverlay -> dismissHlsQualityOverlay()
+        is PlayerEvent.OnSelectHlsQuality -> selectHlsQuality(event.qualityId)
         PlayerEvent.OnShowSubtitleOverlay -> {
             _uiState.update {
                 it.copy(

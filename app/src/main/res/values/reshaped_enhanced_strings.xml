@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="player_hls_quality_title">Stream quality</string>
+    <string name="player_hls_quality_auto">Auto (recommended)</string>
+    <string name="player_hls_quality_loading">Detecting HLS variants…</string>
+    <string name="cd_hls_quality">Video quality</string>
+</resources>

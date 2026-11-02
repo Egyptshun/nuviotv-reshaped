@@ -459,6 +459,9 @@ class PlayerRuntimeController(
     internal var hideControlsJob: Job? = null
     internal var hideSeekOverlayJob: Job? = null
     internal var watchProgressSaveJob: Job? = null
+    internal var hlsQualityResolveJob: Job? = null
+    internal var hlsMasterSourceUrl: String? = null
+    internal var selectedHlsQualityId: String? = null
     internal var seekProgressSyncJob: Job? = null
     internal var frameRateProbeJob: Job? = null
     internal var frameRateProbeToken: Long = 0L
