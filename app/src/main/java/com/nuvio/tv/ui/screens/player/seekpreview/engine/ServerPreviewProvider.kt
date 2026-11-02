@@ -135,6 +135,7 @@ internal class ServerPreviewProvider private constructor(
     override fun close() { closed = true; cancel(); sheets.clear() }
     companion object {
         private val http = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
+            .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
             .connectTimeout(5, TimeUnit.SECONDS).readTimeout(5, TimeUnit.SECONDS).callTimeout(8, TimeUnit.SECONDS).build()
         fun forStream(url: String, headers: Map<String, String>, sourceId: String?): ServerPreviewProvider? {
             val parsed = url.toHttpUrlOrNull() ?: return null

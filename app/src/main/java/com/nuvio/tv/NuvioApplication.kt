@@ -24,7 +24,8 @@ import com.nuvio.tv.core.image.StaleWhileRevalidateCacheStrategy
 import com.nuvio.tv.core.runtime.PluginRuntimeHooks
 import com.nuvio.tv.core.sync.StartupSyncService
 import com.nuvio.tv.core.sync.androidtv.AndroidTvChannelSyncService
-import com.nuvio.tv.core.network.IPv4FirstDns
+import com.nuvio.tv.reshaped.doh.DnsSettings
+import com.nuvio.tv.reshaped.doh.NuvioOkHttpDns
 import com.nuvio.tv.core.network.NoDelaySocketFactory
 import com.nuvio.tv.core.network.imageNetworkFetcherFactory
 import com.nuvio.tv.data.local.ImagePerformancePreferences
@@ -88,6 +89,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
 
     override fun onCreate() {
         super.onCreate()
+        DnsSettings.initialize(this) // Nuvio RS hook: DNS over HTTPS provider
         SentryInitializer.start(this, sentrySettingsDataStore)
         PluginRuntimeHooks.onApplicationCreate(this)
         com.nuvio.tv.reshaped.subtitlefont.SubtitleFontStore.warmUp(this) // Nuvio RS hook: custom subtitle font, loaded off the main thread
@@ -109,7 +111,7 @@ class NuvioApplication : Application(), SingletonImageLoader.Factory {
             }
             OkHttpClient.Builder()
                 .dispatcher(imageDispatcher)
-                .dns(IPv4FirstDns())
+                .dns(NuvioOkHttpDns.dns)
                 .socketFactory(NoDelaySocketFactory)
                 .connectTimeout(4, TimeUnit.SECONDS)
                 .readTimeout(5, TimeUnit.SECONDS)

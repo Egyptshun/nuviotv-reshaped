@@ -8,6 +8,7 @@ import com.lagradost.cloudstream3.AcraApplication
 import com.lagradost.cloudstream3.app
 import com.lagradost.nicehttp.ignoreAllSSLErrors
 import com.nuvio.tv.NuvioApplication
+import com.nuvio.tv.reshaped.doh.NuvioOkHttpDns
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import org.conscrypt.Conscrypt
@@ -50,7 +51,7 @@ object PluginRuntimeHooks {
 
             try {
                 app.baseClient = OkHttpClient.Builder()
-                    .dns(com.nuvio.tv.core.network.IPv4FirstDns())
+                    .dns(NuvioOkHttpDns.dns)
                     .cookieJar(NuvioApplication.extensionCookieJar)
                     .followRedirects(true)
                     .followSslRedirects(true)

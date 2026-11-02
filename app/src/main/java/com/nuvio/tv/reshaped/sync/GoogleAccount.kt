@@ -62,6 +62,7 @@ internal object GoogleAccount {
 
     internal val http: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()

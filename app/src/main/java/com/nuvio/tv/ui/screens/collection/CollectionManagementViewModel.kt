@@ -8,6 +8,7 @@ import com.nuvio.tv.core.sync.CollectionSyncService
 import com.nuvio.tv.data.local.CollectionsDataStore
 import com.nuvio.tv.data.local.ValidationResult
 import com.nuvio.tv.domain.model.Collection
+import com.nuvio.tv.reshaped.doh.NuvioOkHttpDns
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -191,7 +192,7 @@ class CollectionManagementViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val client = okhttp3.OkHttpClient.Builder()
-                    .dns(com.nuvio.tv.core.network.IPv4FirstDns())
+                    .dns(NuvioOkHttpDns.dns)
                     .socketFactory(com.nuvio.tv.core.network.NoDelaySocketFactory)
                     .build()
                 val request = okhttp3.Request.Builder().url(url).build()

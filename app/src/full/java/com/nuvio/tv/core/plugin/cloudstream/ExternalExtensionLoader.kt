@@ -16,7 +16,7 @@ import dalvik.system.DexClassLoader
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import com.nuvio.tv.core.network.IPv4FirstDns
+import com.nuvio.tv.reshaped.doh.NuvioOkHttpDns
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -173,7 +173,7 @@ class ExternalExtensionLoader @Inject constructor(
     private val extractorRegistry: ExternalExtractorRegistry
 ) {
     private val httpClient = OkHttpClient.Builder()
-        .dns(IPv4FirstDns())
+        .dns(NuvioOkHttpDns.dns)
         .connectTimeout(60, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
         .followRedirects(true)
