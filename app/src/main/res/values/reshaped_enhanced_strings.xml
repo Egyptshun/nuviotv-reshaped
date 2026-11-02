@@ -2,6 +2,13 @@
 <resources>
     <string name="advanced_section_network">Network</string>
     <string name="detail_budget">Budget</string>
+    <string name="detail_episode_navigator_jump">Jump to episode</string>
+    <string name="detail_episode_navigator_jump_subtitle">Choose episode 1–%1$d in this season.</string>
+    <string name="detail_episode_navigator_jump_title">Jump to episode</string>
+    <string name="detail_episode_sort_air_date">Air date</string>
+    <string name="detail_episode_sort_default">Episode order</string>
+    <string name="detail_episode_sort_reverse">Reverse order</string>
+    <string name="detail_episode_sort_title">Sort episodes</string>
     <string name="detail_revenue">Revenue</string>
     <string name="more_like_this_see_all_title">More Like This</string>
     <string name="pinned_stream_source_chip_pinned">Pinned source</string>
