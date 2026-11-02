@@ -2000,6 +2000,18 @@ fun PlayerRuntimeController.onEvent(
         is PlayerEvent.OnSetSubtitleOutlineColor -> {
             scope.launch { playerSettingsDataStore.setSubtitleOutlineColor(event.color) }
         }
+        is PlayerEvent.OnSetSubtitleBackgroundColor -> {
+            scope.launch { playerSettingsDataStore.setSubtitleBackgroundColor(event.color) }
+        }
+        is PlayerEvent.OnSetSubtitleShadowEnabled -> {
+            scope.launch { playerSettingsDataStore.setSubtitleShadowEnabled(event.enabled) }
+        }
+        is PlayerEvent.OnSetSubtitleShadowOpacity -> {
+            scope.launch { playerSettingsDataStore.setSubtitleShadowOpacity(event.opacity) }
+        }
+        is PlayerEvent.OnSetSubtitleShadowSize -> {
+            scope.launch { playerSettingsDataStore.setSubtitleShadowSize(event.size) }
+        }
         is PlayerEvent.OnSetSubtitleVerticalOffset -> {
             scope.launch { playerSettingsDataStore.setSubtitleVerticalOffset(event.offset) }
         }
@@ -2018,8 +2030,11 @@ fun PlayerRuntimeController.onEvent(
                 playerSettingsDataStore.setSubtitleOutlineEnabled(defaults.outlineEnabled)
                 playerSettingsDataStore.setSubtitleOutlineColor(defaults.outlineColor)
                 playerSettingsDataStore.setSubtitleOutlineWidth(defaults.outlineWidth)
-                playerSettingsDataStore.setSubtitleVerticalOffset(defaults.verticalOffset)
                 playerSettingsDataStore.setSubtitleBackgroundColor(defaults.backgroundColor)
+                playerSettingsDataStore.setSubtitleShadowEnabled(defaults.shadowEnabled)
+                playerSettingsDataStore.setSubtitleShadowOpacity(defaults.shadowOpacity)
+                playerSettingsDataStore.setSubtitleShadowSize(defaults.shadowSize)
+                playerSettingsDataStore.setSubtitleVerticalOffset(defaults.verticalOffset)
             }
         }
         PlayerEvent.OnToggleAspectRatio -> {

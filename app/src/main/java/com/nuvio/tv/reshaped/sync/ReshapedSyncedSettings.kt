@@ -7,7 +7,6 @@ import com.nuvio.tv.reshaped.livetv.LiveTvPreferences
 import com.nuvio.tv.ui.reshaped.pillnav.PillNavPreferences
 import com.nuvio.tv.ui.screens.player.autosync.AutoSyncPreferences
 import com.nuvio.tv.ui.screens.player.autosync.bubble.AutoSyncBubbleToasts
-import com.nuvio.tv.ui.screens.player.seekpreview.SeekrKeyPreferences
 import com.nuvio.tv.ui.screens.player.seekpreview.local.LocalSeekPreviewSettings
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
@@ -59,11 +58,6 @@ internal object ReshapedSyncedSettings {
         bool(TV, "pill_nav", { PillNavPreferences.ensureLoaded(it); PillNavPreferences.enabled.value }, PillNavPreferences::setEnabled),
         bool(TV, "netflix_ui", { com.nuvio.tv.ui.reshaped.netflix.NetflixUiPreferences.ensureLoaded(it); com.nuvio.tv.ui.reshaped.netflix.NetflixUiPreferences.enabled.value }, com.nuvio.tv.ui.reshaped.netflix.NetflixUiPreferences::setEnabled),
         bool(TV, "connection_fit", { ConnectionSpeedEstimator.ensureLoaded(it); ConnectionSpeedEstimator.enabled.value }, ConnectionSpeedEstimator::setEnabled),
-        Setting(
-            TV, "seekr_key",
-            read = { SeekrKeyPreferences.ensureLoaded(it); JsonPrimitive(SeekrKeyPreferences.userKey.value) },
-            write = { context, value -> value.contentOrNull?.let { SeekrKeyPreferences.setUserKey(context, it) } },
-        ),
     )
 
     /** This device's values, by section. */

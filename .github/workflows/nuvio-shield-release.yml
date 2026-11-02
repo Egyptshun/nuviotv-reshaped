@@ -1,0 +1,277 @@
+name: Nuvio Shield Release
+
+# Signed sideload APKs for Nuvio Shield (com.egyptshun.nuvio.shield). Installs alongside Nuvio RS.
+# Publishes on tags v* or manual workflow_dispatch. Does not replace the AutoSync tester/beta flows.
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag (for example v0.1.0)
+        required: true
+        type: string
+      draft:
+        description: Publish as a draft GitHub release
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nuvio-shield-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      ORG_GRADLE_PROJECT_NUVIO_SHIELD_BUILD: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release tag
+        id: meta
+        env:
+          INPUT_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="${INPUT_TAG}"
+          fi
+          if [[ ! "${TAG}" =~ ^v[0-9]+[.][0-9]+[.][0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag must look like v1.2.3 (got '${TAG}')." >&2
+            exit 1
+          fi
+          VERSION_NAME="${TAG#v}"
+          VERSION_CODE="$(( $(date +%s) + 200000000 ))"
+          echo "tag=${TAG}" >> "${GITHUB_OUTPUT}"
+          echo "version_name=${VERSION_NAME}" >> "${GITHUB_OUTPUT}"
+          echo "version_code=${VERSION_CODE}" >> "${GITHUB_OUTPUT}"
+          echo "Nuvio Shield release ${TAG} (versionCode ${VERSION_CODE})"
+
+      - name: Validate signing secrets
+        env:
+          KEYSTORE_BASE64: ${{ secrets.NUVIO_SHIELD_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.NUVIO_SHIELD_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.NUVIO_SHIELD_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.NUVIO_SHIELD_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          missing=()
+          for name in KEYSTORE_BASE64 STORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            [[ -n "${!name}" ]] || missing+=("${name}")
+          done
+          if (( ${#missing[@]} > 0 )); then
+            printf 'Missing GitHub secrets (see docs/release-setup.md in Project Context): %s\n' "${missing[*]}" >&2
+            exit 1
+          fi
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: false
+
+      - name: Configure Nuvio services
+        env:
+          SUPABASE_URL: ${{ secrets.NUVIO_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.NUVIO_SUPABASE_ANON_KEY }}
+          SUPABASE_FALLBACK: ${{ secrets.NUVIO_SUPABASE_FALLBACK_URL }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: |
+          set -e
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_KEY"
+
+          cat > local.properties <<EOF2
+          NUVIO_SUPABASE_URL=$SUPABASE_URL
+          NUVIO_SUPABASE_ANON_KEY=$SUPABASE_KEY
+          NUVIO_SUPABASE_FALLBACK_URL=$SUPABASE_FALLBACK
+          TMDB_API_KEY=$TMDB_API_KEY
+          TV_LOGIN_WEB_BASE_URL=https://nuvio.tv/tv-login
+          DEVICE_LOGIN_WEB_BASE_URL=https://nuvio.tv/link
+          AVATAR_PUBLIC_BASE_URL=${SUPABASE_URL%/}/storage/v1/object/public/avatars
+          NUVIO_UPDATE_GITHUB_OWNER=${GITHUB_REPOSITORY_OWNER}
+          NUVIO_UPDATE_GITHUB_REPO=${GITHUB_REPOSITORY#*/}
+          AUTOSYNC_FORK=true
+          NUVIO_SHIELD_BUILD=true
+          SIMKL_CLIENT_ID=dc20e0db975583b15096267cee79cd23b1f56d4bd301ce3c51e4a96a49c834a6
+          SIMKL_APP_NAME=nuvio
+          INTRODB_API_URL=https://api.introdb.app/
+          IMDB_RATINGS_API_BASE_URL=https://seriesgraph.com/
+          IMDB_TAPFRAME_API_BASE_URL=https://imdb.tapframe.space/
+          EOF2
+
+          cp local.properties local.dev.properties
+
+      - name: Add Google sign-in for Reshaped sync
+        env:
+          RESHAPED_GOOGLE_TV_CLIENT_ID: ${{ secrets.RESHAPED_GOOGLE_TV_CLIENT_ID }}
+          RESHAPED_GOOGLE_TV_CLIENT_SECRET: ${{ secrets.RESHAPED_GOOGLE_TV_CLIENT_SECRET }}
+        run: |
+          if [[ -n "$RESHAPED_GOOGLE_TV_CLIENT_ID" && -n "$RESHAPED_GOOGLE_TV_CLIENT_SECRET" ]]; then
+            printf '\nRESHAPED_GOOGLE_TV_CLIENT_ID=%s\nRESHAPED_GOOGLE_TV_CLIENT_SECRET=%s\n' "$RESHAPED_GOOGLE_TV_CLIENT_ID" "$RESHAPED_GOOGLE_TV_CLIENT_SECRET" >> local.properties
+          else
+            echo "::warning::RESHAPED_GOOGLE_TV_CLIENT_ID/SECRET secrets are not set; Google sync is unavailable in this build"
+          fi
+
+      - name: Add Trakt credentials
+        env:
+          TRAKT_CLIENT_ID: ${{ secrets.TRAKT_CLIENT_ID }}
+          TRAKT_CLIENT_SECRET: ${{ secrets.TRAKT_CLIENT_SECRET }}
+        run: |
+          if [[ -n "$TRAKT_CLIENT_ID" && -n "$TRAKT_CLIENT_SECRET" ]]; then
+            printf '\nTRAKT_CLIENT_ID=%s\nTRAKT_CLIENT_SECRET=%s\n' "$TRAKT_CLIENT_ID" "$TRAKT_CLIENT_SECRET" >> local.properties
+          else
+            echo "::warning::TRAKT_CLIENT_ID or TRAKT_CLIENT_SECRET secret is not set; Trakt login is disabled in this build"
+          fi
+
+      - name: Add MDBList client ID
+        env:
+          MDBLIST_CLIENT_ID: ${{ secrets.MDBLIST_CLIENT_ID }}
+        run: |
+          if [[ -n "$MDBLIST_CLIENT_ID" ]]; then
+            printf '\nMDBLIST_CLIENT_ID=%s\n' "$MDBLIST_CLIENT_ID" >> local.properties
+          else
+            echo "::warning::MDBLIST_CLIENT_ID secret is not set; MDBList sign-in is disabled in this build"
+          fi
+
+      - name: Configure Nuvio Shield signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.NUVIO_SHIELD_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.NUVIO_SHIELD_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.NUVIO_SHIELD_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.NUVIO_SHIELD_KEY_PASSWORD }}
+        run: |
+          set -e
+          KEYSTORE_PATH="$RUNNER_TEMP/nuvio-shield-release.jks"
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          keytool -list -keystore "$KEYSTORE_PATH" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+
+          {
+            echo "NUVIO_RELEASE_STORE_FILE=$KEYSTORE_PATH"
+            echo "NUVIO_RELEASE_STORE_PASSWORD=$STORE_PASSWORD"
+            echo "NUVIO_RELEASE_KEY_ALIAS=$KEY_ALIAS"
+            echo "NUVIO_RELEASE_KEY_PASSWORD=$KEY_PASSWORD"
+          } >> "$GITHUB_ENV"
+
+      - name: Stamp Shield version
+        env:
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          VERSION_NAME: ${{ steps.meta.outputs.version_name }}
+          VERSION_CODE: ${{ steps.meta.outputs.version_code }}
+        run: |
+          set -euo pipefail
+          export RELEASE_TAG VERSION_NAME VERSION_CODE
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          path = Path("app/build.gradle.kts")
+          text = path.read_text()
+          version_name = os.environ["VERSION_NAME"]
+          version_code = os.environ["VERSION_CODE"]
+
+          text, code_count = re.subn(
+              r'versionCode[ \t]*=[ \t]*[0-9]+',
+              f'versionCode = {version_code}',
+              text,
+              count=1,
+          )
+          text, name_count = re.subn(
+              r'versionName[ \t]*=[ \t]*"[^"]+"',
+              f'versionName = "{version_name}"',
+              text,
+              count=1,
+          )
+
+          if code_count != 1 or name_count != 1:
+              raise SystemExit("Could not stamp Shield version")
+
+          path.write_text(text)
+          PY
+
+          grep -nE 'version(Code|Name)[[:space:]]*=' app/build.gradle.kts | head -n 2
+
+      - name: Test updater and build Nuvio Shield APKs
+        env:
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          python scripts/test_seek_preview_native.py
+          ./gradlew :app:testFullReleaseUnitTest --tests 'com.nuvio.tv.updater.*' --build-cache --stacktrace
+          bash .github/scripts/nuvio-shield-apks.sh build "$RELEASE_TAG"
+
+      - name: Ensure release tag exists
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          if git rev-parse --verify --quiet "refs/tags/${RELEASE_TAG}" >/dev/null; then
+            echo "Tag ${RELEASE_TAG} already exists; reusing it for this release."
+            exit 0
+          fi
+          git tag "${RELEASE_TAG}" "${GITHUB_SHA}"
+          git push origin "refs/tags/${RELEASE_TAG}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.meta.outputs.tag }}
+          VERSION_NAME: ${{ steps.meta.outputs.version_name }}
+          DRAFT: ${{ github.event_name == 'workflow_dispatch' && inputs.draft || 'false' }}
+        run: |
+          set -euo pipefail
+          mapfile -t APKS < <(bash .github/scripts/nuvio-shield-apks.sh list "$RELEASE_TAG")
+          NOTES_FILE="nuvio-shield-release-notes.md"
+          {
+            echo "## Nuvio Shield ${VERSION_NAME}"
+            echo
+            echo "Sideload build for Nvidia Shield and other Android TV devices."
+            echo
+            echo "- **Application ID:** \`com.egyptshun.nuvio.shield\`"
+            echo "- Installs **next to** Nuvio RS (\`com.nuvioreshaped.tv\`); it does not replace it."
+            echo "- On Shield hardware, prefer the **arm64** APK; use **any** (universal) if unsure."
+            echo
+            echo "Built from commit \`${GITHUB_SHA}\` on branch \`${GITHUB_REF_NAME}\`."
+          } > "$NOTES_FILE"
+
+          release_args=(
+            "$RELEASE_TAG"
+            --title "Nuvio Shield v${VERSION_NAME}"
+            --notes-file "$NOTES_FILE"
+            --latest
+          )
+          if [[ "$DRAFT" == "true" ]]; then
+            release_args+=(--draft)
+          fi
+
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${APKS[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --title "Nuvio Shield v${VERSION_NAME}" --notes-file "$NOTES_FILE"
+          else
+            gh release create "${release_args[@]}" "${APKS[@]}"
+          fi
+
+      - name: Restore version metadata
+        if: always()
+        run: git checkout -- app/build.gradle.kts || true

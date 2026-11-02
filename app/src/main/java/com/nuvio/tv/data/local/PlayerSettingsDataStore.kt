@@ -153,6 +153,9 @@ data class SubtitleStyleSettings(
     val outlineEnabled: Boolean = true,
     val outlineColor: Int = Color.Black.toArgb(),
     val outlineWidth: Int = 2, // 1-5
+    val shadowEnabled: Boolean = false,
+    val shadowOpacity: Int = 75, // 0-100
+    val shadowSize: Int = 2, // 1-8
     val hdrStyleEnabled: Boolean = false,
     val hdrTextColor: Int = Color.White.toArgb(),
     val hdrBrightness: Int = HDR_BRIGHTNESS_DEFAULT, // 0-100, see hdrBrightnessFactor
@@ -733,6 +736,9 @@ class PlayerSettingsDataStore @Inject constructor(
     private val subtitleOutlineEnabledKey = booleanPreferencesKey("subtitle_outline_enabled")
     private val subtitleOutlineColorKey = intPreferencesKey("subtitle_outline_color")
     private val subtitleOutlineWidthKey = intPreferencesKey("subtitle_outline_width")
+    private val subtitleShadowEnabledKey = booleanPreferencesKey("subtitle_shadow_enabled")
+    private val subtitleShadowOpacityKey = intPreferencesKey("subtitle_shadow_opacity")
+    private val subtitleShadowSizeKey = intPreferencesKey("subtitle_shadow_size")
     private val subtitleHdrStyleEnabledKey = booleanPreferencesKey("subtitle_hdr_style_enabled")
     private val subtitleHdrTextColorKey = intPreferencesKey("subtitle_hdr_text_color")
     private val subtitleHdrBrightnessKey = intPreferencesKey("subtitle_hdr_brightness")
@@ -1181,6 +1187,9 @@ class PlayerSettingsDataStore @Inject constructor(
                         outlineEnabled = prefs[subtitleOutlineEnabledKey] ?: true,
                         outlineColor = prefs[subtitleOutlineColorKey] ?: Color.Black.toArgb(),
                         outlineWidth = prefs[subtitleOutlineWidthKey] ?: 2,
+                        shadowEnabled = prefs[subtitleShadowEnabledKey] ?: false,
+                        shadowOpacity = prefs[subtitleShadowOpacityKey] ?: 75,
+                        shadowSize = prefs[subtitleShadowSizeKey] ?: 2,
                         hdrStyleEnabled = prefs[subtitleHdrStyleEnabledKey] ?: false,
                         hdrTextColor = prefs[subtitleHdrTextColorKey] ?: Color.White.toArgb(),
                         hdrBrightness = prefs[subtitleHdrBrightnessKey] ?: SubtitleStyleSettings.HDR_BRIGHTNESS_DEFAULT,
@@ -1766,6 +1775,13 @@ class PlayerSettingsDataStore @Inject constructor(
     suspend fun setSubtitleOutlineEnabled(enabled: Boolean) { store().edit { it[subtitleOutlineEnabledKey] = enabled } }
     suspend fun setSubtitleOutlineColor(color: Int) { store().edit { it[subtitleOutlineColorKey] = color } }
     suspend fun setSubtitleOutlineWidth(width: Int) { store().edit { it[subtitleOutlineWidthKey] = width.coerceIn(1, 5) } }
+    suspend fun setSubtitleShadowEnabled(enabled: Boolean) { store().edit { it[subtitleShadowEnabledKey] = enabled } }
+    suspend fun setSubtitleShadowOpacity(opacity: Int) {
+        store().edit { it[subtitleShadowOpacityKey] = opacity.coerceIn(0, 100) }
+    }
+    suspend fun setSubtitleShadowSize(size: Int) {
+        store().edit { it[subtitleShadowSizeKey] = size.coerceIn(1, 8) }
+    }
     suspend fun setSubtitleHdrStyleEnabled(enabled: Boolean) { store().edit { it[subtitleHdrStyleEnabledKey] = enabled } }
     suspend fun setSubtitleHdrTextColor(color: Int) { store().edit { it[subtitleHdrTextColorKey] = color } }
     suspend fun setSubtitleHdrDimPlayerControls(enabled: Boolean) {
