@@ -206,6 +206,25 @@ sealed class Screen(val route: String) {
         }
     }
 
+    data object MoreLikeThisSeeAll : Screen(
+        "more_like_this_see_all/{contentId}/{itemType}/{source}?addonBaseUrl={addonBaseUrl}&title={title}"
+    ) {
+        private fun encode(value: String): String =
+            URLEncoder.encode(value, "UTF-8").replace("+", "%20")
+
+        fun createRoute(
+            contentId: String,
+            itemType: String,
+            source: String,
+            addonBaseUrl: String? = null,
+            title: String = ""
+        ): String {
+            val encodedAddon = encode(addonBaseUrl.orEmpty())
+            val encodedTitle = encode(title)
+            return "more_like_this_see_all/${encode(contentId)}/${encode(itemType)}/${encode(source)}?addonBaseUrl=$encodedAddon&title=$encodedTitle"
+        }
+    }
+
     data object TmdbEntityBrowse : Screen(
         "tmdb_entity_browse/{entityKind}/{entityId}/{entityName}?sourceType={sourceType}"
     ) {
