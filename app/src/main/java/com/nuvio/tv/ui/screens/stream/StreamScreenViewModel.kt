@@ -112,6 +112,7 @@ class StreamScreenViewModel @Inject constructor(
     private val serverPlayback: ServerPlayback,
     party: com.nuvio.tv.core.party.PartyRepository,
     profileManager: com.nuvio.tv.core.profile.ProfileManager,
+    private val pinnedStreamSourcesRepository: com.nuvio.tv.reshaped.pinnedstreams.PinnedStreamSourcesRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     private var autoPlayHandledForSession = false
@@ -130,6 +131,7 @@ class StreamScreenViewModel @Inject constructor(
     private var streamBadgePresentationRequestId = 0L
     private var badgedAddonNames: Set<String> = emptySet()
     private var playbackMetaVideos: List<Video>? = null
+    private var pinnedSourceKeys: Set<String> = emptySet()
 
     private val embeddedStreamGroupName: String by lazy {
         context.getString(R.string.stream_embedded_group)
@@ -321,12 +323,58 @@ class StreamScreenViewModel @Inject constructor(
             }
         }
         loadMissingMetaDetailsIfNeeded()
+        viewModelScope.launch {
+            pinnedStreamSourcesRepository.observePinnedKeys(playbackProfileId).collectLatest { keys ->
+                pinnedSourceKeys = keys
+                applyPinnedOrderToUiState()
+            }
+        }
         loadStreams()
+    }
+
+    private suspend fun applyPinnedOrderToUiState() {
+        val state = _uiState.value
+        if (state.addonStreams.isEmpty() && state.sourceChips.isEmpty()) return
+        val sortedGroups = pinnedStreamSourcesRepository.sortAddonStreamGroups(
+            groups = state.addonStreams,
+            pinnedKeys = pinnedSourceKeys,
+            contentType = contentType
+        )
+        val allStreams = sortedGroups.flatMap { it.streams }
+        val availableAddons = sortedGroups.map { it.addonName }
+        val sortedChipNames = pinnedStreamSourcesRepository.sortSourceNames(
+            names = state.sourceChips.map { it.name },
+            pinnedKeys = pinnedSourceKeys,
+            contentType = contentType
+        )
+        val chipsByName = state.sourceChips.associateBy { it.name }
+        val sortedChips = sortedChipNames.mapNotNull { chipsByName[it] }
+        val currentFilter = state.selectedAddonFilter
+        val fullFiltered = if (currentFilter == null) {
+            allStreams
+        } else {
+            allStreams.filter { it.addonName == currentFilter }
+        }
+        streamFilterFullList = fullFiltered
+        val pageEnd = state.filteredStreams.size.coerceAtMost(fullFiltered.size)
+            .coerceAtLeast(STREAM_FILTER_PAGE_SIZE.coerceAtMost(fullFiltered.size))
+        updateUiStateIfChanged {
+            it.copy(
+                addonStreams = sortedGroups,
+                allStreams = allStreams,
+                availableAddons = availableAddons,
+                sourceChips = sortedChips,
+                filteredStreams = if (pageEnd >= fullFiltered.size) fullFiltered else fullFiltered.subList(0, pageEnd)
+            )
+        }
     }
 
     private fun SavedStateHandle.getOptionalString(key: String): String? {
         return get<String>(key)?.takeIf { it.isNotBlank() }
     }
+
+    fun isSourcePinned(sourceName: String): Boolean =
+        pinnedStreamSourcesRepository.isPinned(sourceName, pinnedSourceKeys)
 
     fun onEvent(event: StreamScreenEvent) {
         when (event) {
@@ -378,6 +426,23 @@ class StreamScreenViewModel @Inject constructor(
                 // this screen's collector before every source finished.
                 if (!streamLoadCompleted && streamLoadJob == null) {
                     loadStreams()
+                }
+            }
+            is StreamScreenEvent.OnSourcePinMenuRequested -> {
+                updateUiStateIfChanged { it.copy(pinMenuSourceName = event.sourceName) }
+            }
+            StreamScreenEvent.OnDismissSourcePinMenu -> {
+                updateUiStateIfChanged { it.copy(pinMenuSourceName = null) }
+            }
+            StreamScreenEvent.OnConfirmTogglePinnedSource -> {
+                val sourceName = _uiState.value.pinMenuSourceName ?: return
+                viewModelScope.launch {
+                    pinnedStreamSourcesRepository.togglePinnedSource(
+                        profileId = playbackProfileId,
+                        sourceName = sourceName,
+                        contentType = contentType
+                    )
+                    updateUiStateIfChanged { it.copy(pinMenuSourceName = null) }
                 }
             }
         }
@@ -561,8 +626,17 @@ class StreamScreenViewModel @Inject constructor(
                         connectionFitCaptured = true
                     }
                 }
-                val addonOrderedStreams = StreamAutoPlaySelector.orderAddonStreams(addonStreamGroups, installedAddonOrder, preferredServerNames)
+                val addonOrderedStreams = StreamAutoPlaySelector.orderAddonStreams(
+                    addonStreamGroups,
+                    installedAddonOrder,
+                    preferredServerNames
+                )
                 val orderedAddonStreams = connectionFit?.applyToGroups(addonOrderedStreams) ?: addonOrderedStreams
+                val pinnedOrderedAddonStreams = pinnedStreamSourcesRepository.sortAddonStreamGroups(
+                    groups = orderedAddonStreams,
+                    pinnedKeys = pinnedSourceKeys,
+                    contentType = contentType
+                )
 
                 // Preserve badges already computed by prior badge jobs so they
                 // don't vanish when repository emits fresh (badge-less) streams.
@@ -571,9 +645,9 @@ class StreamScreenViewModel @Inject constructor(
                     .associateBy { it.badgeMergeKey() }
 
                 val mergedAddonStreams = if (existingBadgedStreams.isEmpty()) {
-                    orderedAddonStreams
+                    pinnedOrderedAddonStreams
                 } else {
-                    orderedAddonStreams.map { group ->
+                    pinnedOrderedAddonStreams.map { group ->
                         group.copy(
                             streams = group.streams.map { stream ->
                                 val existing = existingBadgedStreams[stream.badgeMergeKey()]
@@ -1097,7 +1171,11 @@ class StreamScreenViewModel @Inject constructor(
             emptyList()
         }
 
-        val orderedNames = (directDebridSourceNames + serverSourceNames + addonNames + pluginNames).distinct()
+        val orderedNames = pinnedStreamSourcesRepository.sortSourceNames(
+            names = (directDebridSourceNames + serverSourceNames + addonNames + pluginNames).distinct(),
+            pinnedKeys = pinnedSourceKeys,
+            contentType = contentType
+        )
         if (orderedNames.isEmpty()) {
             updateUiStateIfChanged { it.copy(sourceChips = emptyList()) }
             return

@@ -40,6 +40,44 @@ import kotlinx.coroutines.withTimeoutOrNull
 private const val NEXT_EPISODE_HARD_TIMEOUT_MS = 120_000L
 private const val CLOUD_LIBRARY_AUTO_NEXT_TIMEOUT_MS = 65_000L
 
+internal fun PlayerRuntimeController.streamContentType(): String =
+    navigationArgs.contentType?.takeIf { it.isNotBlank() } ?: "movie"
+
+internal suspend fun PlayerRuntimeController.applyPinnedSourceOrderToUiState() {
+    val state = _uiState.value
+    if (state.sourceAllStreams.isEmpty() && state.sourceChips.isEmpty()) return
+    val contentType = streamContentType()
+    val sortedGroups = pinnedStreamSourcesRepository.sortAddonStreamGroups(
+        groups = state.sourceAllStreams.groupBy { it.addonName }.map { (name, streams) ->
+            AddonStreams(addonName = name, addonLogo = streams.firstOrNull()?.addonLogo, streams = streams)
+        },
+        pinnedKeys = pinnedSourceKeys,
+        contentType = contentType
+    )
+    val allStreams = sortedGroups.flatMap { it.streams }
+    val availableAddons = sortedGroups.map { it.addonName }
+    val sortedChipNames = pinnedStreamSourcesRepository.sortSourceNames(
+        names = state.sourceChips.map { it.name },
+        pinnedKeys = pinnedSourceKeys,
+        contentType = contentType
+    )
+    val chipsByName = state.sourceChips.associateBy { it.name }
+    val sortedChips = sortedChipNames.mapNotNull { chipsByName[it] }
+    val selectedAddon = state.sourceSelectedAddonFilter
+    val fullFiltered = allStreams.filterByAddon(selectedAddon)
+    sourceFilterFullList = fullFiltered
+    val pageEnd = state.sourceFilteredStreams.size.coerceAtMost(fullFiltered.size)
+        .coerceAtLeast(SOURCE_FILTER_PAGE_SIZE.coerceAtMost(fullFiltered.size))
+    _uiState.update {
+        it.copy(
+            sourceAllStreams = allStreams,
+            sourceAvailableAddons = availableAddons,
+            sourceChips = sortedChips,
+            sourceFilteredStreams = if (pageEnd >= fullFiltered.size) fullFiltered else fullFiltered.subList(0, pageEnd)
+        )
+    }
+}
+
 /**
  * Schedules incremental badge matching for source streams in the background.
  * Only processes addon groups not yet badged, emits UI update every 5 streams.
@@ -264,7 +302,12 @@ internal fun PlayerRuntimeController.loadSourceStreams(forceRefresh: Boolean) {
                         }
                     }
                     val addonOrderedStreams = StreamAutoPlaySelector.orderAddonStreams(result.data, installedAddonOrder, preferredServerNames)
-                    val addonStreams = connectionFit?.applyToGroups(addonOrderedStreams) ?: addonOrderedStreams
+                    val connectionApplied = connectionFit?.applyToGroups(addonOrderedStreams) ?: addonOrderedStreams
+                    val addonStreams = pinnedStreamSourcesRepository.sortAddonStreamGroups(
+                        groups = connectionApplied,
+                        pinnedKeys = pinnedSourceKeys,
+                        contentType = streamContentType()
+                    )
                     val allStreams = addonStreams.flatMap { it.streams }
                     val availableAddons = addonStreams.map { it.addonName }
                     _uiState.update {
@@ -502,7 +545,11 @@ private suspend fun PlayerRuntimeController.updateSourceChipsForFetchStart(
         emptyList()
     }
 
-    val ordered = (serverSourceNames(type, videoId) + addonNames + pluginNames).distinct()
+    val ordered = pinnedStreamSourcesRepository.sortSourceNames(
+        names = (serverSourceNames(type, videoId) + addonNames + pluginNames).distinct(),
+        pinnedKeys = pinnedSourceKeys,
+        contentType = type
+    )
     _uiState.update {
         it.copy(
             sourceChips = ordered.map { name -> SourceChipItem(name, SourceChipStatus.LOADING) }
@@ -596,7 +643,11 @@ private suspend fun PlayerRuntimeController.updateEpisodeSourceChipsForFetchStar
         emptyList()
     }
 
-    val ordered = (serverSourceNames(type, videoId) + addonNames + pluginNames).distinct()
+    val ordered = pinnedStreamSourcesRepository.sortSourceNames(
+        names = (serverSourceNames(type, videoId) + addonNames + pluginNames).distinct(),
+        pinnedKeys = pinnedSourceKeys,
+        contentType = type
+    )
     _uiState.update {
         it.copy(
             episodeSourceChips = ordered.map { name -> SourceChipItem(name, SourceChipStatus.LOADING) }

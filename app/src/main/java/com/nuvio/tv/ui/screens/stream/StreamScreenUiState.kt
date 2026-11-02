@@ -36,7 +36,8 @@ data class StreamScreenUiState(
     val autoPlayStream: Stream? = null,
     val autoPlayPlaybackInfo: StreamPlaybackInfo? = null,
     val error: String? = null,
-    val playbackErrorMessage: String? = null
+    val playbackErrorMessage: String? = null,
+    val pinMenuSourceName: String? = null
 ) {
     val isEpisode: Boolean get() = season != null && episode != null
 }
@@ -49,6 +50,9 @@ sealed class StreamScreenEvent {
     data object OnRetry : StreamScreenEvent()
     data object OnBackPress : StreamScreenEvent()
     data object OnResume : StreamScreenEvent()
+    data class OnSourcePinMenuRequested(val sourceName: String) : StreamScreenEvent()
+    data object OnDismissSourcePinMenu : StreamScreenEvent()
+    data object OnConfirmTogglePinnedSource : StreamScreenEvent()
 }
 
 data class SharedStream(

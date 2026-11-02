@@ -107,6 +107,7 @@ class PlayerRuntimeController(
     internal val serverPlayback: ServerPlayback,
     internal val serverStreams: ServerStreams,
     internal val party: com.nuvio.tv.core.party.PartyRepository,
+    internal val pinnedStreamSourcesRepository: com.nuvio.tv.reshaped.pinnedstreams.PinnedStreamSourcesRepository,
     internal val profileId: Int,
     savedStateHandle: SavedStateHandle,
     internal val scope: CoroutineScope
@@ -330,6 +331,12 @@ class PlayerRuntimeController(
 
     init {
         scope.launch {
+            pinnedStreamSourcesRepository.observePinnedKeys(profileId).collect { keys ->
+                pinnedSourceKeys = keys
+                applyPinnedSourceOrderToUiState()
+            }
+        }
+        scope.launch {
             _uiState
                 .map { it.isPlaying }
                 .distinctUntilChanged()
@@ -342,6 +349,9 @@ class PlayerRuntimeController(
     internal fun consumePendingExitReason() {
         _uiState.update { it.copy(pendingExitReason = null) }
     }
+
+    internal fun isSourcePinned(sourceName: String): Boolean =
+        pinnedStreamSourcesRepository.isPinned(sourceName, pinnedSourceKeys)
 
     internal val _playbackTimeline = MutableStateFlow(PlaybackTimelineState())
     val playbackTimeline: StateFlow<PlaybackTimelineState> = _playbackTimeline.asStateFlow()
@@ -497,6 +507,7 @@ class PlayerRuntimeController(
     internal var sourceBadgeJob: Job? = null
     internal var sourceFilterFullList: List<com.nuvio.tv.domain.model.Stream> = emptyList()
     internal var sourceBadgedAddonNames: Set<String> = emptySet()
+    internal var pinnedSourceKeys: Set<String> = emptySet()
     internal var sourceStreamsScope: kotlinx.coroutines.CoroutineScope? = null
     internal var episodeStreamsScope: kotlinx.coroutines.CoroutineScope? = null
     internal var episodeBadgeJob: Job? = null

@@ -69,6 +69,8 @@ internal fun StreamSourcesSidePanel(
     onAddonFilterSelected: (String?) -> Unit,
     onStreamSelected: (Stream) -> Unit,
     onExpandStreams: () -> Unit = {},
+    isSourcePinned: (String) -> Boolean = { false },
+    onSourcePinMenuRequested: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val isRtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
@@ -326,6 +328,8 @@ internal fun StreamSourcesSidePanel(
                         onFocusIndexChanged = { index ->
                             if (index != 1) userMovedFromFirstResult = true
                         },
+                        isSourcePinned = isSourcePinned,
+                        onSourceLongPress = onSourcePinMenuRequested,
                         debugTag = "SourcesSidePanel"
                     )
                 }

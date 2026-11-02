@@ -16,6 +16,7 @@ import kotlinx.coroutines.delay
 
 import com.nuvio.tv.ui.theme.NuvioTheme
 import com.nuvio.tv.ui.theme.accentBrush
+import com.nuvio.tv.reshaped.pinnedstreams.PinnedStreamSourceMenuOverlay
 
 import android.util.Log
 import android.view.KeyEvent
@@ -1943,9 +1944,22 @@ fun PlayerScreen(
                     onAddonFilterSelected = { viewModel.onEvent(PlayerEvent.OnSourceAddonFilterSelected(it)) },
                     onStreamSelected = { viewModel.onEvent(PlayerEvent.OnSourceStreamSelected(it)) },
                     onExpandStreams = { viewModel.controller.expandSourceFilteredStreamsIfNeeded() },
+                    isSourcePinned = { viewModel.controller.isSourcePinned(it) },
+                    onSourcePinMenuRequested = {
+                        viewModel.onEvent(PlayerEvent.OnSourcePinMenuRequested(it))
+                    },
                     modifier = Modifier.align(Alignment.CenterEnd)
                 )
             }
+        }
+
+        uiState.sourcePinMenuSourceName?.let { sourceName ->
+            PinnedStreamSourceMenuOverlay(
+                sourceName = sourceName,
+                isPinned = viewModel.controller.isSourcePinned(sourceName),
+                onDismiss = { viewModel.onEvent(PlayerEvent.OnDismissSourcePinMenu) },
+                onTogglePin = { viewModel.onEvent(PlayerEvent.OnConfirmTogglePinnedSource) }
+            )
         }
 
         AnimatedVisibility(
