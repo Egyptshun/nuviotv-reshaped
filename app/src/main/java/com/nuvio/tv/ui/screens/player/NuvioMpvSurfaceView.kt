@@ -464,8 +464,21 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
             }
             val backgroundAlpha = (style.backgroundColor ushr 24) and 0xFF
             val borderStyle = if (backgroundAlpha > 0) "background-box" else "outline-and-shadow"
-            // In background-box mode, sub-shadow-offset controls the box padding/margin
-            val shadowOffset = if (backgroundAlpha > 0) 5.0 else 0.0
+            val shadowOffset = when {
+                backgroundAlpha > 0 -> 5.0
+                style.shadowEnabled -> style.shadowSize.coerceIn(1, 8).toDouble()
+                else -> 0.0
+            }
+            val shadowColorArgb = if (style.shadowEnabled && backgroundAlpha == 0) {
+                android.graphics.Color.argb(
+                    (style.shadowOpacity / 100f * 255).toInt().coerceIn(0, 255),
+                    0,
+                    0,
+                    0
+                )
+            } else {
+                android.graphics.Color.TRANSPARENT
+            }
 
             mpv.setPropertyDouble("sub-scale", scale)
             mpv.setPropertyBoolean("sub-bold", style.bold)
@@ -478,6 +491,9 @@ class NuvioMpvSurfaceView @JvmOverloads constructor(
             mpv.setPropertyDouble("sub-pos", liftedSubPos)
             mpv.setPropertyInt("sub-margin-y", subMarginY)
             mpv.setPropertyDouble("sub-shadow-offset", shadowOffset)
+            if (shadowColorArgb != android.graphics.Color.TRANSPARENT) {
+                mpv.setPropertyString("sub-shadow-color", toMpvColor(shadowColorArgb))
+            }
             mpv.setPropertyString("sub-border-style", borderStyle)
             mpv.setPropertyString("sub-color", toMpvColor(style.textColor))
             mpv.setPropertyString("sub-back-color", toMpvColor(style.backgroundColor))
