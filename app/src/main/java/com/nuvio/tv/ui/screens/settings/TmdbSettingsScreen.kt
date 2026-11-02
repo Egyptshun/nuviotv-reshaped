@@ -146,6 +146,20 @@ fun TmdbSettingsContent(
                     )
                 }
 
+                item(key = "tmdb_original_language_artwork") {
+                    SettingsToggleRow(
+                        title = stringResource(R.string.tmdb_original_language_artwork_title),
+                        subtitle = stringResource(R.string.tmdb_original_language_artwork_subtitle),
+                        checked = uiState.useOriginalLanguageArtwork,
+                        enabled = uiState.enabled && uiState.useArtwork,
+                        onToggle = {
+                            viewModel.onEvent(
+                                TmdbSettingsEvent.ToggleOriginalLanguageArtwork(!uiState.useOriginalLanguageArtwork)
+                            )
+                        }
+                    )
+                }
+
                 item(key = "tmdb_basic_info") {
                     SettingsToggleRow(
                         title = stringResource(R.string.tmdb_basic_info_title),

@@ -35,4 +35,6 @@
     <string name="subtitle_style_shadow">Shadow</string>
     <string name="subtitle_style_shadow_opacity">Shadow Opacity</string>
     <string name="subtitle_style_shadow_size">Shadow Size</string>
+    <string name="tmdb_original_language_artwork_subtitle">Use TMDB original titles, posters, and backdrops instead of localized artwork.</string>
+    <string name="tmdb_original_language_artwork_title">Original-language artwork</string>
 </resources>

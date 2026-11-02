@@ -46,6 +46,7 @@ class TmdbSettingsDataStore @Inject constructor(
     private val useTrailersKey = booleanPreferencesKey("tmdb_use_trailers")
     private val useMoreLikeThisKey = booleanPreferencesKey("tmdb_use_more_like_this")
     private val useCollectionsKey = booleanPreferencesKey("tmdb_use_collections")
+    private val useOriginalLanguageArtworkKey = booleanPreferencesKey("tmdb_use_original_language_artwork")
 
     val settings: StateFlow<TmdbSettings> = profileManager.activeProfileId.flatMapLatest { pid ->
         factory.get(pid, FEATURE).data.map { prefs ->
@@ -63,7 +64,8 @@ class TmdbSettingsDataStore @Inject constructor(
                 useEpisodes = prefs[useEpisodesKey] ?: true,
                 useTrailers = prefs[useTrailersKey] ?: true,
                 useMoreLikeThis = prefs[useMoreLikeThisKey] ?: true,
-                useCollections = prefs[useCollectionsKey] ?: true
+                useCollections = prefs[useCollectionsKey] ?: true,
+                useOriginalLanguageArtwork = prefs[useOriginalLanguageArtworkKey] ?: false
             )
         }
     }.stateIn(scope, SharingStarted.Eagerly, TmdbSettings())
@@ -122,5 +124,9 @@ class TmdbSettingsDataStore @Inject constructor(
 
     suspend fun setUseCollections(enabled: Boolean) {
         store().edit { it[useCollectionsKey] = enabled }
+    }
+
+    suspend fun setUseOriginalLanguageArtwork(enabled: Boolean) {
+        store().edit { it[useOriginalLanguageArtworkKey] = enabled }
     }
 }

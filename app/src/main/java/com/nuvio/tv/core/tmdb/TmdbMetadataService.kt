@@ -73,7 +73,8 @@ class TmdbMetadataService(
     suspend fun fetchEnrichment(
         tmdbId: String,
         contentType: ContentType,
-        language: String = "en"
+        language: String = "en",
+        preferOriginalLanguageArtwork: Boolean = false
     ): TmdbEnrichment? =
         withContext(ioDispatcher) {
             val normalizedLanguage = normalizeTmdbLanguage(language)
@@ -470,12 +471,24 @@ class TmdbMetadataService(
                 }
 
                 val enrichment = TmdbEnrichment(
-                    localizedTitle = localizedTitle,
+                    localizedTitle = if (preferOriginalLanguageArtwork) {
+                        originalTitle ?: localizedTitle
+                    } else {
+                        localizedTitle
+                    },
                     description = description,
                     genres = genres,
-                    backdrop = backdrop,
+                    backdrop = if (preferOriginalLanguageArtwork && !details?.backdropPath.isNullOrBlank()) {
+                        buildImageUrl(details?.backdropPath, size = "w1280")
+                    } else {
+                        backdrop
+                    },
                     logo = logo,
-                    poster = poster,
+                    poster = if (preferOriginalLanguageArtwork && !details?.posterPath.isNullOrBlank()) {
+                        buildImageUrl(details?.posterPath, size = "w500")
+                    } else {
+                        poster
+                    },
                     directorMembers = exposedDirectorMembers,
                     writerMembers = exposedWriterMembers,
                     castMembers = castMembers,

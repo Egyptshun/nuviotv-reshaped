@@ -863,7 +863,8 @@ class MetaDetailsViewModel @Inject constructor(
         val enrichment = tmdbMetadataService.fetchEnrichment(
             tmdbId = tmdbId.toString(),
             contentType = type,
-            language = settings.language
+            language = settings.language,
+            preferOriginalLanguageArtwork = settings.useOriginalLanguageArtwork && settings.useArtwork
         ) ?: return false
         val meta = Meta(
             id = itemId,
@@ -1572,7 +1573,8 @@ class MetaDetailsViewModel @Inject constructor(
                 tmdbMetadataService.fetchEnrichment(
                     tmdbId = tmdbId,
                     contentType = tmdbContentType,
-                    language = settings.language
+                    language = settings.language,
+                    preferOriginalLanguageArtwork = settings.useOriginalLanguageArtwork && settings.useArtwork
                 )
             }
             val episodes = if (needsEpisodes) {

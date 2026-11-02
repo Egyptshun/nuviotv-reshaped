@@ -25,5 +25,7 @@ data class TmdbSettings(
     // Group: Recommendations (more like this)
     val useMoreLikeThis: Boolean = true,
     // Group: Collections
-    val useCollections: Boolean = true
+    val useCollections: Boolean = true,
+    /** Prefer TMDB original-language titles, posters, and logos when artwork is enabled. */
+    val useOriginalLanguageArtwork: Boolean = false
 )
