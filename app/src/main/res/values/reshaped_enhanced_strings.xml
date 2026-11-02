@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="detail_budget">Budget</string>
+    <string name="detail_revenue">Revenue</string>
     <string name="subtitle_style_background">Background</string>
     <string name="subtitle_style_background_opacity">Background Opacity</string>
     <string name="subtitle_style_shadow">Shadow</string>
