@@ -37,6 +37,7 @@ internal object BoundedSeekr {
     /** One client for every title, so connections are pooled rather than rebuilt per film. */
     private val http: OkHttpClient by lazy {
         OkHttpClient.Builder().connectTimeout(5, TimeUnit.SECONDS).readTimeout(5, TimeUnit.SECONDS)
+            .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
             .callTimeout(8, TimeUnit.SECONDS).build()
     }
 

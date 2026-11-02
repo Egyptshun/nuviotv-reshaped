@@ -100,6 +100,12 @@ internal object PreviewRetryAfter {
 }
 
 /** Reuses one keep-alive pool across providers, with feature-owned cancellation and limits. */
-private val previewHttp = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
-    .connectTimeout(5, TimeUnit.SECONDS).readTimeout(10, TimeUnit.SECONDS).callTimeout(15, TimeUnit.SECONDS).build()
+private val previewHttp = OkHttpClient.Builder()
+    .followRedirects(false)
+    .followSslRedirects(false)
+    .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
+    .connectTimeout(5, TimeUnit.SECONDS)
+    .readTimeout(10, TimeUnit.SECONDS)
+    .callTimeout(15, TimeUnit.SECONDS)
+    .build()
 internal fun thumbnailHttpClient(headers: Map<String, String>): OkHttpClient = previewHttp

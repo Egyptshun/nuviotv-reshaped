@@ -13,6 +13,7 @@ import com.nuvio.tv.domain.model.LocalScraperResult
 import com.nuvio.tv.domain.model.PluginManifest
 import com.nuvio.tv.domain.model.PluginRepository
 import com.nuvio.tv.domain.model.RemotePluginInfo
+import com.nuvio.tv.reshaped.doh.NuvioOkHttpDns
 import com.nuvio.tv.domain.model.RepositoryType
 import com.nuvio.tv.domain.model.ScraperInfo
 import com.nuvio.tv.domain.model.ScraperManifestInfo
@@ -77,7 +78,7 @@ class PluginManager @Inject constructor(
     private val manifestAdapter = moshi.adapter(PluginManifest::class.java)
     
     private val httpClient = OkHttpClient.Builder()
-        .dns(com.nuvio.tv.core.network.IPv4FirstDns())
+        .dns(NuvioOkHttpDns.dns)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .build()

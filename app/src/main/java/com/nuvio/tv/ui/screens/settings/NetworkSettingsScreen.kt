@@ -563,6 +563,10 @@ fun AdvancedSettingsContent(
             }
         }
 
+        item(key = "dns_over_https") {
+            DnsOverHttpsSettingsGroup(modifier = Modifier.fillMaxWidth())
+        }
+
         item(key = "network_tests") {
             SettingsGroupCard(
                 modifier = Modifier.fillMaxWidth(),

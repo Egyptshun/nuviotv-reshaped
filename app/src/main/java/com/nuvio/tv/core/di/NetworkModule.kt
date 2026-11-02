@@ -42,7 +42,7 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
-import com.nuvio.tv.core.network.IPv4FirstDns
+import com.nuvio.tv.reshaped.doh.NuvioOkHttpDns
 import com.nuvio.tv.core.diagnostics.SentryNetworkBreadcrumbInterceptor
 import java.io.File
 import java.security.SecureRandom
@@ -103,7 +103,7 @@ object NetworkModule {
     @Singleton
     fun provideOkHttpClient(@ApplicationContext context: Context): OkHttpClient {
         return OkHttpClient.Builder()
-            .dns(IPv4FirstDns())
+            .dns(NuvioOkHttpDns.dns)
             .socketFactory(NoDelaySocketFactory)
             // Keep separate from the old trust-all cache. Cached responses bypass a new TLS handshake.
             .cache(Cache(File(context.cacheDir, "http_cache_v2"), 50L * 1024 * 1024)) // 50 MB disk cache
@@ -168,7 +168,7 @@ object NetworkModule {
     @Singleton
     @Named("customServerAuth")
     fun provideCustomServerAuthHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .dns(IPv4FirstDns())
+        .dns(NuvioOkHttpDns.dns)
         .socketFactory(NoDelaySocketFactory)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -191,7 +191,7 @@ object NetworkModule {
     @Named("directDebrid")
     fun provideDirectDebridOkHttpClient(): OkHttpClient =
         OkHttpClient.Builder()
-            .dns(IPv4FirstDns())
+            .dns(NuvioOkHttpDns.dns)
             .socketFactory(NoDelaySocketFactory)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
@@ -210,7 +210,7 @@ object NetworkModule {
     @Singleton
     @Named("simkl")
     fun provideSimklOkHttpClient(): OkHttpClient = OkHttpClient.Builder()
-        .dns(IPv4FirstDns())
+        .dns(NuvioOkHttpDns.dns)
         .socketFactory(NoDelaySocketFactory)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)

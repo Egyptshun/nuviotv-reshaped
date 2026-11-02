@@ -811,6 +811,7 @@ private class PreviewTorboxHttp(
         private var publishedCache: List<Pair<String, String>>? = null
         private var publishedUntil = 0L
         private val client = OkHttpClient.Builder().connectTimeout(5, TimeUnit.SECONDS)
+            .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
             .readTimeout(5, TimeUnit.SECONDS).callTimeout(10, TimeUnit.SECONDS).build()
     }
 }

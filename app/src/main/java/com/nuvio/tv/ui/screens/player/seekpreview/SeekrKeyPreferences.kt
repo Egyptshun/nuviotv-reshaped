@@ -63,6 +63,7 @@ internal object SeekrKeyPreferences {
 
     private val httpClient by lazy {
         OkHttpClient.Builder()
+            .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
             .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(10, TimeUnit.SECONDS)
             .build()

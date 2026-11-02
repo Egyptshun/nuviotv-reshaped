@@ -191,7 +191,7 @@ class CollectionManagementViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val client = okhttp3.OkHttpClient.Builder()
-                    .dns(com.nuvio.tv.core.network.IPv4FirstDns())
+                    .dns(NuvioOkHttpDns.dns)
                     .socketFactory(com.nuvio.tv.core.network.NoDelaySocketFactory)
                     .build()
                 val request = okhttp3.Request.Builder().url(url).build()

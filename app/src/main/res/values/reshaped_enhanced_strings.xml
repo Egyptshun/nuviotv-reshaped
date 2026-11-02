@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="advanced_section_network">Network</string>
+    <string name="settings_advanced_dns">DNS resolver</string>
+    <string name="settings_advanced_dns_subtitle">Use DNS over HTTPS when your provider blocks addon or debrid hosts</string>
+    <string name="settings_advanced_dns_system">System DNS</string>
+    <string name="settings_advanced_dns_doh_format">DNS over HTTPS (%1$s)</string>
+    <string name="settings_advanced_dns_note">Resolves hostnames through the selected provider before HTTP requests. Playback over mpv still uses system DNS.</string>
+</resources>

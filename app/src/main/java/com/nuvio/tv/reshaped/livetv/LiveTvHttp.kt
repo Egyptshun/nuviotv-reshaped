@@ -23,6 +23,7 @@ internal object LiveTvHttp {
     /** Also carries the list's channel previews, so they stay out of Nuvio's playback networking and speed learning. */
     internal val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(45, TimeUnit.SECONDS)
             .followRedirects(true)

@@ -35,6 +35,7 @@ object MediaServerModule {
         profileDataStore: ProfileDataStore
     ): ServerRepository {
         val http = OkHttpClient.Builder()
+            .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
             .socketFactory(NoDelaySocketFactory)
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)

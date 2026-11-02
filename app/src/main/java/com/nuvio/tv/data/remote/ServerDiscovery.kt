@@ -140,6 +140,7 @@ internal object ServerDiscoveryPolicy {
 @Singleton
 class ServerDiscoveryService @Inject constructor() {
     private val client = OkHttpClient.Builder()
+            .dns(com.nuvio.tv.reshaped.doh.NuvioOkHttpDns.dns)
         .socketFactory(NoDelaySocketFactory)
         .connectTimeout(10, TimeUnit.SECONDS)
         .readTimeout(10, TimeUnit.SECONDS)
