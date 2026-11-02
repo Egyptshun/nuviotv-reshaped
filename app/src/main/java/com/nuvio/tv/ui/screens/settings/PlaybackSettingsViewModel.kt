@@ -326,6 +326,18 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setSubtitleOutlineWidth(width)
     }
 
+    suspend fun setSubtitleShadowEnabled(enabled: Boolean) {
+        playerSettingsDataStore.setSubtitleShadowEnabled(enabled)
+    }
+
+    suspend fun setSubtitleShadowOpacity(opacity: Int) {
+        playerSettingsDataStore.setSubtitleShadowOpacity(opacity)
+    }
+
+    suspend fun setSubtitleShadowSize(size: Int) {
+        playerSettingsDataStore.setSubtitleShadowSize(size)
+    }
+
     suspend fun setSubtitleHdrStyleEnabled(enabled: Boolean) {
         playerSettingsDataStore.setSubtitleHdrStyleEnabled(enabled)
     }

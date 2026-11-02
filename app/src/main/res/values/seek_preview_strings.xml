@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Seek-preview (Seekr) strings, kept apart from strings.xml so upstream merges stay clean. -->
+<!-- Seek-preview strings, kept apart from strings.xml so upstream merges stay clean. -->
 <resources>
-    <string name="player_seek_preview_sync">Preview Sync</string>
-    <string name="player_seek_preview_sync_hint">Nudge until the thumbnail matches the frame playing behind this panel.</string>
-    <string name="player_seek_preview_sync_keys">Left/Right adjust · OK resets · Down uses the suggested value · Up or Back closes</string>
-    <string name="player_seek_preview_sync_suggested">Suggested: %1$s (duration gap vs. the preview source)</string>
-    <string name="cd_seek_preview_sync">Preview sync</string>
-    <string name="settings_seek_preview_local">Generate previews on device</string>
-    <string name="settings_seek_preview_local_description">Builds seek previews in the background while you watch, using cached playback data or small downloads when resources allow. Playback starts immediately. Seekr is also used when available.</string>
+    <string name="settings_seek_preview_local">Seek bar thumbnails</string>
+    <string name="settings_seek_preview_local_description">Shows thumbnails while you scrub. On-device previews use cached playback data or small downloads when resources allow; adaptive streams and mpv use a built-in frame grabber. Playback starts immediately.</string>
     <string name="settings_seek_preview_prepare">Prepare previews before playing</string>
     <string name="settings_seek_preview_prepare_description">Build previews across the title first. You can start watching at any time.</string>
     <string name="settings_seek_preview_coverage">Preview preparation coverage</string>

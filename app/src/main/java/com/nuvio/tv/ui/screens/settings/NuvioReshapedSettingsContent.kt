@@ -94,7 +94,6 @@ internal fun NuvioReshapedSettingsContent(
         group("seek_previews", R.string.reshaped_group_seek_previews, R.string.reshaped_group_seek_previews_description,
             Icons.Default.Slideshow) {
             seekPreviewSettingsItems()
-            seekrKeySettingsItems()
         }
         group("formats", R.string.reshaped_formats_header, R.string.reshaped_group_formats_description,
             Icons.Default.SurroundSound) {

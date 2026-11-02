@@ -237,6 +237,8 @@ class TmdbMetadataService(
                     ?.takeIf { it.isNotEmpty() }
                     ?: details?.originCountry?.takeIf { it.isNotEmpty() }
                 val language = details?.originalLanguage?.takeIf { it.isNotBlank() }
+                val budget = if (tmdbType == "movie") details?.budget?.takeIf { it > 0L } else null
+                val revenue = if (tmdbType == "movie") details?.revenue?.takeIf { it > 0L } else null
                 val rawLocalizedTitle = (details?.title ?: details?.name)?.takeIf { it.isNotBlank() }
                 val originalTitle = (details?.originalTitle ?: details?.originalName)
                     ?.trim()?.takeIf { it.isNotBlank() }
@@ -461,6 +463,7 @@ class TmdbMetadataService(
                     poster == null && castMembers.isEmpty() && director.isEmpty() && writer.isEmpty() &&
                     releaseInfo == null && rating == null && runtime == null && countries.isNullOrEmpty() && language == null &&
                     productionCompanies.isEmpty() && networks.isEmpty() && ageRating == null && status == null &&
+                    budget == null && revenue == null &&
                     trailers.isEmpty()
                 ) {
                     return@withContext null
@@ -491,7 +494,9 @@ class TmdbMetadataService(
                     collectionName = collectionName,
                     originalTitle = originalTitle,
                     alternativeTitles = altTitles,
-                    trailers = trailers
+                    trailers = trailers,
+                    budget = budget,
+                    revenue = revenue
                 )
                 enrichmentCache[cacheKey] = enrichment
                 requestDeferred.complete(enrichment)
@@ -1671,7 +1676,9 @@ data class TmdbEnrichment(
     val collectionName: String?,
     val originalTitle: String? = null,
     val alternativeTitles: List<String> = emptyList(),
-    val trailers: List<MetaTrailer> = emptyList()
+    val trailers: List<MetaTrailer> = emptyList(),
+    val budget: Long? = null,
+    val revenue: Long? = null
 )
 
 data class TmdbEpisodeEnrichment(

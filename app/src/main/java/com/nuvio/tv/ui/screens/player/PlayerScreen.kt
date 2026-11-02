@@ -168,10 +168,8 @@ import com.nuvio.tv.domain.model.WatchProgress
 import com.nuvio.tv.ui.components.LoadingIndicator
 import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewAboveProgressBar
 import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewCueTicks
-import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewSyncLayer
+import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewErrorHook
 import com.nuvio.tv.ui.screens.player.seekpreview.SeekPreviewThumbnailHost
-import com.nuvio.tv.ui.screens.player.seekpreview.handleBack
-import com.nuvio.tv.ui.screens.player.seekpreview.seekPreviewSyncAction
 import android.text.format.DateFormat
 import com.nuvio.tv.ui.util.rememberRawSvgPainter
 import java.util.Date
@@ -363,7 +361,6 @@ fun PlayerScreen(
 
     val handleBackPress = handleBackPress@{
         if (externalHandoffInProgress) return@handleBackPress
-        if (viewModel.seekPreview.handleBack(uiState)) return@handleBackPress
         if (postPlayRecommendationState.canReturnToPlayer && !uiState.playbackEnded) {
             returnToPlayerFromPostPlay()
             viewModel.hideControls()
@@ -594,7 +591,6 @@ fun PlayerScreen(
     ) {
         if (shouldConfirmNextEpisodeOnEnd || postPlayRecommendationState.isVisible) return@LaunchedEffect
         if (uiState.error != null) return@LaunchedEffect
-        if (viewModel.seekPreview.isSyncOverlayOpen) return@LaunchedEffect
         if (uiState.showPartyPanel) return@LaunchedEffect
         if (uiState.showControls && !uiState.showEpisodesPanel && !uiState.showSourcesPanel && !uiState.showChaptersPanel &&
             !uiState.showAudioOverlay && !uiState.showSubtitleOverlay &&
@@ -1809,7 +1805,7 @@ fun PlayerScreen(
             )
         }
 
-        SeekPreviewSyncLayer(viewModel, uiState, onDismissed = { runCatching { containerFocusRequester.requestFocus() } })
+        SeekPreviewErrorHook(viewModel, hasError = uiState.error != null)
 
         AnimatedVisibility(
             visible = seekOverlayVisible,
@@ -2606,10 +2602,20 @@ private fun PlayerView.applySubtitleStyleIfNeeded(
             android.graphics.Typeface.DEFAULT
         }
 
-        val edgeType = if (subtitleStyle.outlineEnabled) {
-            androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE
+        val edgeType = when {
+            subtitleStyle.outlineEnabled -> androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_OUTLINE
+            subtitleStyle.shadowEnabled -> androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW
+            else -> androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_NONE
+        }
+        val edgeColor = if (subtitleStyle.shadowEnabled && !subtitleStyle.outlineEnabled) {
+            android.graphics.Color.argb(
+                (subtitleStyle.shadowOpacity / 100f * 255).toInt().coerceIn(0, 255),
+                0,
+                0,
+                0
+            )
         } else {
-            androidx.media3.ui.CaptionStyleCompat.EDGE_TYPE_NONE
+            subtitleStyle.outlineColor
         }
 
         setStyle(
@@ -2618,7 +2624,7 @@ private fun PlayerView.applySubtitleStyleIfNeeded(
                 subtitleStyle.backgroundColor,
                 android.graphics.Color.TRANSPARENT,
                 edgeType,
-                subtitleStyle.outlineColor,
+                edgeColor,
                 typeface
             )
         )
@@ -3173,16 +3179,6 @@ private fun PlayerControlsOverlay(
                                 onDownKey = onHideControls,
                                 onFocused = onResetHideTimer
                             )
-                            seekPreviewSyncAction(viewModel)?.let { openSync ->
-                                ControlButton(
-                                    icon = Icons.Default.Tune,
-                                    contentDescription = stringResource(R.string.cd_seek_preview_sync),
-                                    onClick = openSync,
-                                    upFocusRequester = progressUpTarget,
-                                    onDownKey = onHideControls,
-                                    onFocused = onResetHideTimer
-                                )
-                            }
                             if (uiState.playbackIssueReportsEnabled) {
                                 ReportControlButton(
                                     reportId = uiState.playbackIssueReportId,

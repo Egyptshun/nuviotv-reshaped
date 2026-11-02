@@ -21,3 +21,10 @@ internal val SubtitleOutlineColorPresets = listOf(
     Color(0xFF00E5FF),
     Color(0xFFFF5C5C)
 )
+
+internal val SubtitleBackgroundColorPresets = listOf(
+    Color.Transparent,
+    Color.Black,
+    Color(0xFF101010),
+    Color(0xFF303030)
+)
