@@ -17,13 +17,19 @@ def buildConfigString = { String value ->
 }
 
 def autoSyncFork = resolveProperty("AUTOSYNC_FORK", "false").toLowerCase() in ["1", "true", "yes", "on"]
+def nuvioShieldBuild = resolveProperty("NUVIO_SHIELD_BUILD", "false").toLowerCase() in ["1", "true", "yes", "on"] ||
+    "true".equalsIgnoreCase(providers.gradleProperty("NUVIO_SHIELD_BUILD").getOrNull())
 // Releases also ship a universal "bridge" APK under the pre-rename id, so installs from before
 // the rename update in place and then hand their settings to Nuvio RS.
 def reshapedLegacyBridge = "true".equalsIgnoreCase(providers.gradleProperty("nuvio.reshaped.legacyBridge").getOrNull())
 
 def defaults = android.defaultConfig
 if (autoSyncFork) {
-    defaults.applicationId = reshapedLegacyBridge ? "com.nuviodebug.com" : "com.nuvioreshaped.tv"
+    if (nuvioShieldBuild) {
+        defaults.applicationId = "com.egyptshun.nuvio.shield"
+    } else {
+        defaults.applicationId = reshapedLegacyBridge ? "com.nuviodebug.com" : "com.nuvioreshaped.tv"
+    }
 }
 // Seekr seek-preview key, supplied to CI builds from the SEEKR_API_KEY secret.
 defaults.buildConfigField("String", "SEEKR_API_KEY", buildConfigString(localProperties.getProperty("SEEKR_API_KEY", "").trim()))
@@ -36,9 +42,16 @@ defaults.buildConfigField("String", "GITHUB_OWNER", buildConfigString(resolvePro
 defaults.buildConfigField("String", "GITHUB_REPO", buildConfigString(resolveProperty("NUVIO_UPDATE_GITHUB_REPO", "NuvioTV")))
 defaults.buildConfigField("boolean", "AUTOSYNC_FORK", autoSyncFork.toString())
 
-// The "Nuvio RS" app name for every locale; the legacy bridge keeps the old name.
-if (autoSyncFork && !reshapedLegacyBridge) {
+// The "Nuvio RS" app name for every locale; Shield builds use "Nuvio Shield"; the legacy bridge keeps the old name.
+if (autoSyncFork && nuvioShieldBuild) {
+    android.sourceSets.getByName("full").res.srcDir("src/shield/res")
+} else if (autoSyncFork && !reshapedLegacyBridge) {
     android.sourceSets.getByName("full").res.srcDir("src/reshaped/res")
+}
+
+if (nuvioShieldBuild) {
+    // Sideload channel: installs next to Nuvio RS; updates come from GitHub releases you publish manually.
+    android.productFlavors.getByName("full").buildConfigField("boolean", "FEATURE_IN_APP_UPDATES_ENABLED", "false")
 }
 
 // On-device speech recognition for the audio subtitle sync fallback (sherpa-onnx, Apache-2.0).
