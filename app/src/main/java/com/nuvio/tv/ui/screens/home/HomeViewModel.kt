@@ -20,6 +20,8 @@ import com.nuvio.tv.data.local.MDBListSettingsDataStore
 import com.nuvio.tv.data.local.TmdbSettingsDataStore
 import com.nuvio.tv.data.local.TraktSettingsDataStore
 import com.nuvio.tv.data.local.ContinueWatchingEnrichmentCache
+import com.nuvio.tv.reshaped.homesnapshot.HomeSnapshot
+import com.nuvio.tv.reshaped.homesnapshot.HomeSnapshotStore
 import com.nuvio.tv.data.mediaserver.ServerCatalog
 import com.nuvio.tv.data.trailer.TrailerService
 import com.nuvio.tv.domain.model.Addon
@@ -86,6 +88,7 @@ class HomeViewModel @Inject constructor(
     internal val trailerService: TrailerService,
     internal val watchedSeriesStateHolder: com.nuvio.tv.data.local.WatchedSeriesStateHolder,
     internal val cwEnrichmentCache: ContinueWatchingEnrichmentCache,
+    internal val homeSnapshotStore: HomeSnapshotStore,
     internal val profileManager: com.nuvio.tv.core.profile.ProfileManager,
     internal val tvRecommendationManager: TvRecommendationManager,
     internal val serverCatalog: ServerCatalog,
@@ -323,6 +326,9 @@ class HomeViewModel @Inject constructor(
     @Volatile
     internal var startupGracePeriodActive: Boolean = true
     internal var startupAuthNoticeJob: Job? = null
+    internal var preloadedHomeSnapshot: HomeSnapshot? = null
+    internal var homeSnapshotGeneration: Int = 0
+    internal var homeSnapshotSaveJob: Job? = null
 
     // Lazy catalog loading
     internal val eagerCatalogLoadCount: Int = 4
@@ -381,6 +387,8 @@ class HomeViewModel @Inject constructor(
             observeBlurUnwatchedEpisodes()
             observeProgressSourceChanges()
             observeCollections()
+            preloadedHomeSnapshot = homeSnapshotStore.load()
+            restoreHomeSnapshotIfNeeded()
             observeInstalledAddons()
             observeManualAddonRefresh()
 
@@ -389,6 +397,7 @@ class HomeViewModel @Inject constructor(
             profileManager.activeProfileId.collect { newId ->
                 if (newId != previousProfileId) {
                     previousProfileId = newId
+                    onHomeProfileChanged(newId)
                     // Cancel old pipeline — prevents racing writes from stale coroutines.
                     cwPipelineJob?.cancel()
                     cwPipelineJob = null
