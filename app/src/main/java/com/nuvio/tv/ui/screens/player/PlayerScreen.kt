@@ -222,6 +222,7 @@ fun PlayerScreen(
     onOpenPartyMedia: (PartyMedia) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val hiddenPlayerToolbarButtons by viewModel.hiddenPlayerToolbarButtons.collectAsState()
     val playerBadges = rememberPlayerBadges(viewModel, uiState)
     val partyState by viewModel.party.state.collectAsState()
     val partyPlayback by viewModel.party.playback.collectAsState()
@@ -1688,7 +1689,8 @@ fun PlayerScreen(
                 },
                 onHideControls = { viewModel.hideControls() },
                 onBack = { exitPlayer() },
-                skipButtonVisible = skipButtonActuallyVisible
+                skipButtonVisible = skipButtonActuallyVisible,
+                hiddenToolbarButtons = hiddenPlayerToolbarButtons
             )
         }
 
@@ -2843,7 +2845,8 @@ private fun PlayerControlsOverlay(
     skipButtonVisible: Boolean = false,
     subtitleReportingActive: Boolean = true,
     onSubtitleClearanceChanged: (Float) -> Unit = {},
-    onSubtitleTitleBoundsChanged: (Float, Float) -> Unit = { _, _ -> }
+    onSubtitleTitleBoundsChanged: (Float, Float) -> Unit = { _, _ -> },
+    hiddenToolbarButtons: Set<String> = emptySet()
 ) {
     val density = LocalDensity.current
     val clearanceOffsetPx = with(density) { (NuvioTheme.spacing.xl - SUBTITLE_CONTROLS_GAP).toPx() }
@@ -3071,7 +3074,7 @@ private fun PlayerControlsOverlay(
                         )
                     }
 
-                    if (hasSubtitleControl) {
+                    if (hasSubtitleControl && com.nuvio.tv.ui.reshaped.player.PlayerToolbarButtonId.SUBTITLE.storageKey !in hiddenToolbarButtons) {
                         ControlButton(
                             icon = Icons.Default.ClosedCaption,
                             iconPainter = customSubtitlePainter,
@@ -3083,6 +3086,7 @@ private fun PlayerControlsOverlay(
                         )
                     }
 
+<<<<<<< HEAD
                     if (hasHlsQualityControl) {
                         ControlButton(
                             icon = Icons.Default.Hd,
@@ -3095,6 +3099,9 @@ private fun PlayerControlsOverlay(
                     }
 
                     if (hasAudioControl) {
+=======
+                    if (hasAudioControl && com.nuvio.tv.ui.reshaped.player.PlayerToolbarButtonId.AUDIO.storageKey !in hiddenToolbarButtons) {
+>>>>>>> origin/cursor/enhanced-player-button-layout-6260
                         ControlButton(
                             icon = Icons.AutoMirrored.Filled.VolumeUp,
                             iconPainter = customAudioPainter,
@@ -3106,7 +3113,8 @@ private fun PlayerControlsOverlay(
                         )
                     }
 
-                    if (uiState.chapters.isNotEmpty() && !isLivePlayback) {
+                    if (uiState.chapters.isNotEmpty() && !isLivePlayback &&
+                        com.nuvio.tv.ui.reshaped.player.PlayerToolbarButtonId.CHAPTERS.storageKey !in hiddenToolbarButtons) {
                         ControlButton(
                             icon = Icons.AutoMirrored.Filled.Toc,
                             contentDescription = stringResource(R.string.player_chapters),
@@ -3117,17 +3125,20 @@ private fun PlayerControlsOverlay(
                         )
                     }
 
-                    ControlButton(
-                        icon = Icons.Default.SwapHoriz,
-                        iconPainter = customSourcePainter,
-                        contentDescription = stringResource(R.string.cd_sources),
-                        onClick = onShowSourcesPanel,
-                        upFocusRequester = progressUpTarget,
-                        onDownKey = onHideControls,
-                        onFocused = onResetHideTimer
-                    )
+                    if (com.nuvio.tv.ui.reshaped.player.PlayerToolbarButtonId.SOURCES.storageKey !in hiddenToolbarButtons) {
+                        ControlButton(
+                            icon = Icons.Default.SwapHoriz,
+                            iconPainter = customSourcePainter,
+                            contentDescription = stringResource(R.string.cd_sources),
+                            onClick = onShowSourcesPanel,
+                            upFocusRequester = progressUpTarget,
+                            onDownKey = onHideControls,
+                            onFocused = onResetHideTimer
+                        )
+                    }
 
-                    if (hasEpisodeContext) {
+                    if (hasEpisodeContext &&
+                        com.nuvio.tv.ui.reshaped.player.PlayerToolbarButtonId.EPISODES.storageKey !in hiddenToolbarButtons) {
                         ControlButton(
                             icon = Icons.AutoMirrored.Filled.List,
                             iconPainter = customEpisodesPainter,

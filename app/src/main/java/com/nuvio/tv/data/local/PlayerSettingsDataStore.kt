@@ -659,7 +659,7 @@ class PlayerSettingsDataStore @Inject constructor(
     private val osdClockEnabledKey = booleanPreferencesKey("osd_clock_enabled")
     private val skipIntroEnabledKey = booleanPreferencesKey("skip_intro_enabled")
     private val parentalGuideEnabledKey = booleanPreferencesKey("parental_guide_enabled")
-    private val autoSkipSegmentTypesKey = stringSetPreferencesKey("auto_skip_segment_types")
+    private val hiddenPlayerToolbarButtonsKey = stringSetPreferencesKey("hidden_player_toolbar_buttons")
 
     // DV Keys
     // NOTE: pref-key STRINGS retain the legacy `experimental_*` names so users upgrading
@@ -2035,5 +2035,19 @@ class PlayerSettingsDataStore @Inject constructor(
     private fun isNativeMemoryActive(prefs: androidx.datastore.preferences.core.Preferences): Boolean {
         val isEnabled = prefs[nuvioPerformanceModeEnabledKey] ?: PlayerSettings.DEFAULT_NUVIO_PERFORMANCE_MODE_ENABLED
         return isEnabled && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
+    }
+
+    val hiddenPlayerToolbarButtons: Flow<Set<String>> = profileManager.activeProfileId.flatMapLatest { pid ->
+        factory.get(pid, FEATURE).data.map { prefs ->
+            prefs[hiddenPlayerToolbarButtonsKey].orEmpty()
+        }
+    }
+
+    suspend fun setPlayerToolbarButtonHidden(buttonKey: String, hidden: Boolean) {
+        store().edit { prefs ->
+            val current = prefs[hiddenPlayerToolbarButtonsKey].orEmpty().toMutableSet()
+            if (hidden) current.add(buttonKey) else current.remove(buttonKey)
+            prefs[hiddenPlayerToolbarButtonsKey] = current
+        }
     }
 }

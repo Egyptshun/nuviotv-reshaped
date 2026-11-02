@@ -176,6 +176,10 @@ internal fun PlaybackPlayerInterfaceSection(
         onToggle = { onUpdate { setParentalGuideEnabled(!settings.parentalGuideEnabled) } },
         enabled = internalPlayer
     )
+    if (internalPlayer) {
+        SettingsSectionLabel(text = stringResource(R.string.player_toolbar_section))
+        PlayerToolbarSettingsItems()
+    }
 }
 
 @Composable
