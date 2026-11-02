@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="enhanced_dynamic_artwork_background">Dynamic home background</string>
+    <string name="enhanced_dynamic_artwork_background_sub">Tint the home screen background using colors sampled from hero and row artwork.</string>
+</resources>

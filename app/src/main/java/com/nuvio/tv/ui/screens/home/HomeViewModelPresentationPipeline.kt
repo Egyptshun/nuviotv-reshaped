@@ -269,6 +269,20 @@ internal fun HomeViewModel.observeLayoutPreferencesPipeline() {
                 }
             }
     }
+
+    viewModelScope.launch {
+        themeDataStore.dynamicArtworkBackgroundEnabled
+            .distinctUntilChanged()
+            .collectLatest { enabled ->
+                _uiState.update { state ->
+                    if (state.dynamicArtworkBackgroundEnabled == enabled) {
+                        state
+                    } else {
+                        state.copy(dynamicArtworkBackgroundEnabled = enabled)
+                    }
+                }
+            }
+    }
 }
 
 private data class ContinueWatchingPosterInput(
