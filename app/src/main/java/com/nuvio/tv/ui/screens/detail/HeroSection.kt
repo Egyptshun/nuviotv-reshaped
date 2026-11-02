@@ -78,6 +78,7 @@ import com.nuvio.tv.ui.components.SynopsisDescription
 import com.nuvio.tv.ui.theme.NuvioTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.ui.platform.LocalConfiguration
@@ -105,6 +106,8 @@ fun HeroContentSection(
     isInLibrary: Boolean,
     onToggleLibrary: () -> Unit,
     onLibraryLongPress: () -> Unit,
+    showUserRatingButton: Boolean = false,
+    onUserRatingClick: () -> Unit = {},
     isMovieWatched: Boolean,
     isMovieWatchedPending: Boolean,
     onToggleMovieWatched: () -> Unit,
@@ -281,6 +284,15 @@ fun HeroContentSection(
                             onLongPress = onLibraryLongPress,
                             onFocused = onHeroActionFocused
                         )
+
+                        if (showUserRatingButton) {
+                            ActionIconButton(
+                                icon = Icons.Filled.Star,
+                                contentDescription = stringResource(R.string.user_rating_action),
+                                onClick = onUserRatingClick,
+                                onFocused = onHeroActionFocused
+                            )
+                        }
 
                         if (meta.apiType == "movie") {
                             ActionIconButton(

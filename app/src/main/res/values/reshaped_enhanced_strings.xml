@@ -39,4 +39,10 @@
     <string name="subtitle_style_shadow_size">Shadow Size</string>
     <string name="tmdb_original_language_artwork_subtitle">Use TMDB original titles, posters, and backdrops instead of localized artwork.</string>
     <string name="tmdb_original_language_artwork_title">Original-language artwork</string>
+    <string name="user_rating_action">Rate this title</string>
+    <string name="user_rating_failed">Could not save rating</string>
+    <string name="user_rating_not_connected">Connect Trakt, Simkl, or MDBList to rate titles</string>
+    <string name="user_rating_saved">Rating saved to connected services</string>
+    <string name="user_rating_subtitle">Choose a score from 1 to 10. Syncs to connected Trakt, Simkl, and MDBList accounts.</string>
+    <string name="user_rating_title">Rate %1$s</string>
 </resources>
