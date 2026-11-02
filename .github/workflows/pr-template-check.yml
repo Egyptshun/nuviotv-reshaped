@@ -100,7 +100,7 @@ jobs:
             const checkedTypeText = prTypeChecked.join(" ");
             const allowedType = /Translation\/localization only|Critical bug fix/i.test(checkedTypeText);
             if (sectionContent("PR type") !== null && prTypeChecked.length === 1 && !allowedType) {
-              failedRules.push("Current policy allows only translation/localization PRs or critical bug fixes.");
+              failedRules.push("Current policy allows only translation/localization PRs, critical bug fixes, or approved larger/directional changes.");
             }
 
             const impactContent = sectionContent("UI / behavior impact") || "";
