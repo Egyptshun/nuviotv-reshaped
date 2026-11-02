@@ -182,6 +182,10 @@ class PlaybackSettingsViewModel @Inject constructor(
         playerSettingsDataStore.setPauseOverlayEnabled(enabled)
     }
 
+    suspend fun setPrivateViewingEnabled(enabled: Boolean) {
+        playerSettingsDataStore.setPrivateViewingEnabled(enabled)
+    }
+
     suspend fun setOsdClockEnabled(enabled: Boolean) {
         playerSettingsDataStore.setOsdClockEnabled(enabled)
     }

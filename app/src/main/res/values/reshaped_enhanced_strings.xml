@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+<<<<<<< HEAD
+    <string name="playback_private_viewing">Private viewing</string>
+    <string name="playback_private_viewing_sub">Do not save watch progress or sync playback to Trakt, SIMKL, or MDBList</string>
+=======
     <string name="detail_budget">Budget</string>
     <string name="detail_revenue">Revenue</string>
     <string name="subtitle_style_background">Background</string>
@@ -12,4 +16,5 @@
     <string name="sub_shadow_sub">Drop shadow behind text when no outline is used</string>
     <string name="sub_shadow_opacity">Shadow Opacity</string>
     <string name="sub_shadow_size">Shadow Size</string>
+>>>>>>> origin/subtitle-autosync-tester
 </resources>
