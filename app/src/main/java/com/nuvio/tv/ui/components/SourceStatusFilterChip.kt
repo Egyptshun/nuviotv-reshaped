@@ -43,6 +43,7 @@ fun SourceStatusFilterChip(
     isSelected: Boolean,
     status: SourceChipStatus = SourceChipStatus.SUCCESS,
     isSelectable: Boolean = true,
+    isPinned: Boolean = false,
     onClick: () -> Unit,
     onFocusSelect: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -136,7 +137,7 @@ fun SourceStatusFilterChip(
         shape = FilterChipDefaults.shape(shape = RoundedCornerShape(20.dp))
     ) {
         Text(
-            text = name,
+            text = if (isPinned) "★ $name" else name,
             modifier = Modifier.shimmer(isLoading),
             style = MaterialTheme.typography.labelLarge.copy(
                 textDirection = name.contentTextDirection()

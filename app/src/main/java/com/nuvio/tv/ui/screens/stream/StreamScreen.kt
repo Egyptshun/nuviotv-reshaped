@@ -120,6 +120,7 @@ import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
+import com.nuvio.tv.reshaped.pinnedstreams.PinnedStreamSourceMenuOverlay
 
 
 @OptIn(ExperimentalTvMaterial3Api::class)
@@ -515,12 +516,25 @@ fun StreamScreen(
                     },
                     onRetry = { viewModel.onEvent(StreamScreenEvent.OnRetry) },
                     onExpandStreams = { viewModel.expandFilteredStreamsIfNeeded() },
+                    isSourcePinned = { viewModel.isSourcePinned(it) },
+                    onSourcePinMenuRequested = {
+                        viewModel.onEvent(StreamScreenEvent.OnSourcePinMenuRequested(it))
+                    },
                     hazeState = streamHazeState,
                     modifier = Modifier
                         .weight(0.6f)
                         .fillMaxHeight()
                 )
             }
+        }
+
+        uiState.pinMenuSourceName?.let { sourceName ->
+            PinnedStreamSourceMenuOverlay(
+                sourceName = sourceName,
+                isPinned = viewModel.isSourcePinned(sourceName),
+                onDismiss = { viewModel.onEvent(StreamScreenEvent.OnDismissSourcePinMenu) },
+                onTogglePin = { viewModel.onEvent(StreamScreenEvent.OnConfirmTogglePinnedSource) }
+            )
         }
 
         // Player choice dialog for "Ask every time" preference
@@ -779,6 +793,8 @@ private fun RightStreamSection(
     onRestoreFocusedStreamHandled: () -> Unit,
     onRetry: () -> Unit,
     onExpandStreams: () -> Unit = {},
+    isSourcePinned: (String) -> Boolean = { false },
+    onSourcePinMenuRequested: (String) -> Unit = {},
     hazeState: HazeState?,
     modifier: Modifier = Modifier
 ) {
@@ -944,6 +960,8 @@ private fun RightStreamSection(
                             onAddonSelected = { onAddonFilterSelected(it) },
                             externalFocusRequesters = chipFocusRequesters,
                             externalOrderedNames = orderedAddonNames,
+                            isSourcePinned = isSourcePinned,
+                            onSourceLongPress = onSourcePinMenuRequested,
                             debugTag = "StreamScreen"
                         )
                     }

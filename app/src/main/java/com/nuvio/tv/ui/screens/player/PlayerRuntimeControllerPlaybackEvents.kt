@@ -1888,6 +1888,23 @@ fun PlayerRuntimeController.onEvent(
         is PlayerEvent.OnSourceStreamSelected -> {
             switchToSourceStream(event.stream)
         }
+        is PlayerEvent.OnSourcePinMenuRequested -> {
+            _uiState.update { it.copy(sourcePinMenuSourceName = event.sourceName) }
+        }
+        PlayerEvent.OnDismissSourcePinMenu -> {
+            _uiState.update { it.copy(sourcePinMenuSourceName = null) }
+        }
+        PlayerEvent.OnConfirmTogglePinnedSource -> {
+            val sourceName = _uiState.value.sourcePinMenuSourceName ?: return
+            scope.launch {
+                pinnedStreamSourcesRepository.togglePinnedSource(
+                    profileId = profileId,
+                    sourceName = sourceName,
+                    contentType = streamContentType()
+                )
+                _uiState.update { it.copy(sourcePinMenuSourceName = null) }
+            }
+        }
         PlayerEvent.OnDismissTransientOverlay -> {
             _uiState.update {
                 it.copy(

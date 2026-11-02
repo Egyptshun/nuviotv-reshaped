@@ -72,6 +72,10 @@ import androidx.compose.runtime.withFrameNanos
 import kotlinx.coroutines.launch as coroutineLaunch
 import com.nuvio.tv.ui.components.RefreshFilterChip
 import com.nuvio.tv.R
+import android.view.KeyEvent as AndroidKeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import com.nuvio.tv.ui.util.rememberLongPressKeyTracker
+import com.nuvio.tv.reshaped.pinnedstreams.isPinnedSourceMenuKey
 
 @Composable
 internal fun StreamItem(
@@ -263,6 +267,8 @@ internal fun AddonFilterChips(
     externalOrderedNames: List<String>? = null,
     onUpKey: (() -> Unit)? = null,
     onFocusIndexChanged: (Int) -> Unit = {},
+    isSourcePinned: (String) -> Boolean = { false },
+    onSourceLongPress: ((String) -> Unit)? = null,
     debugTag: String = "AddonFilterChips"
 ) {
     val isRtl = androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl
@@ -463,14 +469,45 @@ internal fun AddonFilterChips(
             val chipStatus = chipMap[addon]?.status ?: SourceChipStatus.SUCCESS
             val isSelectable = addon in addons && chipStatus == SourceChipStatus.SUCCESS
             val requesterIdx = if (hasRefresh) i + 2 else i + 1
+            var longPressTriggered by remember(addon) { mutableStateOf(false) }
+            val longPressKeyTracker = rememberLongPressKeyTracker()
             SourceStatusFilterChip(
                 name = addon,
                 isSelected = selectedAddon == addon,
                 status = chipStatus,
                 isSelectable = isSelectable,
-                onClick = { if (isSelectable) onAddonSelected(addon) },
+                isPinned = isSourcePinned(addon),
+                onClick = {
+                    if (longPressTriggered) {
+                        longPressTriggered = false
+                    } else if (isSelectable) {
+                        onAddonSelected(addon)
+                    }
+                },
                 modifier = Modifier
                     .focusRequester(focusRequesters[requesterIdx])
+                    .onPreviewKeyEvent { event ->
+                        if (onSourceLongPress == null || !isSelectable) return@onPreviewKeyEvent false
+                        val native = event.nativeKeyEvent
+                        if (native.action == AndroidKeyEvent.ACTION_DOWN &&
+                            native.keyCode == AndroidKeyEvent.KEYCODE_MENU
+                        ) {
+                            longPressTriggered = true
+                            onSourceLongPress(addon)
+                            return@onPreviewKeyEvent true
+                        }
+                        if (longPressKeyTracker.handle(native, ::isPinnedSourceMenuKey) {
+                                longPressTriggered = true
+                                onSourceLongPress(addon)
+                            }
+                        ) {
+                            if (native.action == AndroidKeyEvent.ACTION_UP) {
+                                longPressTriggered = false
+                            }
+                            return@onPreviewKeyEvent true
+                        }
+                        false
+                    }
                     .onFocusChanged {
                         if (it.isFocused) {
                             focusedChipIndex = requesterIdx
