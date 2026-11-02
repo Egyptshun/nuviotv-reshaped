@@ -118,6 +118,7 @@ private const val KEY_REPEAT_THROTTLE_MS = 80L
 
 private enum class LibraryViewMode {
     Saved,
+    Calendar,
     Cloud,
     Servers
 }
@@ -511,6 +512,14 @@ fun LibraryScreen(
                     }
                 )
             }
+        } else if (viewMode == LibraryViewMode.Calendar) {
+            item(span = { GridItemSpan(maxLineSpan) }) {
+                LibraryReleaseCalendarContent(
+                    entries = uiState.visibleItems,
+                    onNavigateToDetail = onNavigateToDetail,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         } else if (viewMode == LibraryViewMode.Servers) {
             libraryServerContent(
                 shelves = serverShelves,
@@ -760,6 +769,7 @@ private fun LibraryViewModeRow(
                     Text(
                         text = when (mode) {
                             LibraryViewMode.Saved -> stringResource(R.string.library_source_saved)
+                            LibraryViewMode.Calendar -> stringResource(R.string.library_calendar_title)
                             LibraryViewMode.Cloud -> stringResource(R.string.library_source_cloud)
                             LibraryViewMode.Servers -> stringResource(R.string.library_source_servers)
                         }
