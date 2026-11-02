@@ -260,6 +260,18 @@ fun ThemeSettingsContent(
                         }
                     )
                 }
+                SettingsToggleRow(
+                    title = stringResource(R.string.enhanced_dynamic_artwork_background),
+                    subtitle = stringResource(R.string.enhanced_dynamic_artwork_background_sub),
+                    checked = uiState.dynamicArtworkBackgroundEnabled,
+                    onToggle = {
+                        viewModel.onEvent(
+                            ThemeSettingsEvent.ToggleDynamicArtworkBackground(
+                                !uiState.dynamicArtworkBackgroundEnabled
+                            )
+                        )
+                    }
+                )
             }
 
             SettingsGroupCard(

@@ -34,6 +34,7 @@ class ThemeDataStore @Inject constructor(
     private val amoledModeKey = booleanPreferencesKey("amoled_mode")
     private val amoledSurfacesModeKey = booleanPreferencesKey("amoled_surfaces_mode")
     private val settingsUiStyleKey = stringPreferencesKey("settings_ui_style")
+    private val dynamicArtworkBackgroundEnabledKey = booleanPreferencesKey("dynamic_artwork_background_enabled")
 
     val themeSelection: Flow<ThemeSelection> = profileManager.activeProfileId.flatMapLatest { pid ->
         factory.get(pid, FEATURE).data.map { prefs ->
@@ -78,6 +79,12 @@ class ThemeDataStore @Inject constructor(
         }
     }
 
+    val dynamicArtworkBackgroundEnabled: Flow<Boolean> = profileManager.activeProfileId.flatMapLatest { pid ->
+        factory.get(pid, FEATURE).data.map { prefs ->
+            prefs[dynamicArtworkBackgroundEnabledKey] ?: false
+        }
+    }
+
     suspend fun setTheme(theme: AppTheme) {
         store().edit { prefs ->
             prefs[themeKey] = theme.name
@@ -115,6 +122,12 @@ class ThemeDataStore @Inject constructor(
     suspend fun setSettingsUiStyle(style: SettingsUiStyle) {
         store().edit { prefs ->
             prefs[settingsUiStyleKey] = style.name
+        }
+    }
+
+    suspend fun setDynamicArtworkBackgroundEnabled(enabled: Boolean) {
+        store().edit { prefs ->
+            prefs[dynamicArtworkBackgroundEnabledKey] = enabled
         }
     }
 

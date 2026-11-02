@@ -59,6 +59,7 @@ import com.nuvio.tv.ui.components.NuvioDialog
 import com.nuvio.tv.ui.components.PosterCardDefaults
 import com.nuvio.tv.ui.components.PosterCardStyle
 import androidx.compose.ui.res.stringResource
+import com.nuvio.tv.reshaped.artwork.DynamicArtworkBackground
 import com.nuvio.tv.R
 import com.nuvio.tv.core.tracking.LOCAL_LIBRARY_LIST_KEY
 import com.nuvio.tv.core.tracking.supportsMembershipFor
@@ -230,6 +231,11 @@ fun HomeScreen(
         (uiState.continueWatchingEnabled && uiState.continueWatchingItems.isNotEmpty()) ||
         uiState.heroItems.isNotEmpty() ||
         hasCollectionContent
+    val dynamicArtworkUrl = remember(uiState.heroItems, uiState.catalogRows) {
+        uiState.heroItems.firstOrNull()?.backdropUrl
+            ?: uiState.catalogRows.firstOrNull { it.items.isNotEmpty() }
+                ?.items?.firstOrNull()?.backdropUrl
+    }
     val showStartupLoader = when {
         !uiState.layoutPreferencesReady -> true
         uiState.isLoading && !hasAnyContent -> true
@@ -255,6 +261,12 @@ fun HomeScreen(
         }
     }
 
+    DynamicArtworkBackground(
+        enabled = uiState.dynamicArtworkBackgroundEnabled,
+        artworkUrl = dynamicArtworkUrl,
+        baseColor = NuvioTheme.colors.Background,
+        modifier = Modifier.fillMaxSize(),
+    ) {
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -460,6 +472,7 @@ fun HomeScreen(
                 )
             }
         }
+    }
     }
 
     val selectedPoster = posterOptionsTarget

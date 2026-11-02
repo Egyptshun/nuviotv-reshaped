@@ -36,7 +36,8 @@ data class ThemeSettingsUiState(
     val amoledMode: Boolean = false,
     val amoledSurfacesMode: Boolean = false,
     val settingsUiStyle: SettingsUiStyle = SettingsUiStyle.CLASSIC,
-    val availableSettingsUiStyles: List<SettingsUiStyle> = SettingsUiStyle.entries.toList()
+    val availableSettingsUiStyles: List<SettingsUiStyle> = SettingsUiStyle.entries.toList(),
+    val dynamicArtworkBackgroundEnabled: Boolean = false,
 )
 
 sealed class ThemeSettingsEvent {
@@ -46,6 +47,7 @@ sealed class ThemeSettingsEvent {
     data class ToggleAmoledMode(val enabled: Boolean) : ThemeSettingsEvent()
     data class ToggleAmoledSurfacesMode(val enabled: Boolean) : ThemeSettingsEvent()
     data class SelectSettingsUiStyle(val style: SettingsUiStyle) : ThemeSettingsEvent()
+    data class ToggleDynamicArtworkBackground(val enabled: Boolean) : ThemeSettingsEvent()
     data object DismissAppIconFailure : ThemeSettingsEvent()
 }
 
@@ -133,6 +135,19 @@ class ThemeSettingsViewModel @Inject constructor(
                     }
                 }
         }
+        viewModelScope.launch {
+            themeDataStore.dynamicArtworkBackgroundEnabled
+                .distinctUntilChanged()
+                .collectLatest { enabled ->
+                    _uiState.update { state ->
+                        if (state.dynamicArtworkBackgroundEnabled == enabled) {
+                            state
+                        } else {
+                            state.copy(dynamicArtworkBackgroundEnabled = enabled)
+                        }
+                    }
+                }
+        }
     }
 
     private fun currentTheme(): AppTheme {
@@ -147,6 +162,7 @@ class ThemeSettingsViewModel @Inject constructor(
             is ThemeSettingsEvent.ToggleAmoledMode -> setAmoledMode(event.enabled)
             is ThemeSettingsEvent.ToggleAmoledSurfacesMode -> setAmoledSurfacesMode(event.enabled)
             is ThemeSettingsEvent.SelectSettingsUiStyle -> selectSettingsUiStyle(event.style)
+            is ThemeSettingsEvent.ToggleDynamicArtworkBackground -> setDynamicArtworkBackground(event.enabled)
             ThemeSettingsEvent.DismissAppIconFailure -> appIconManager.clearFailure()
         }
     }
@@ -195,6 +211,13 @@ class ThemeSettingsViewModel @Inject constructor(
         restoreStyleFocus = true
         viewModelScope.launch {
             themeDataStore.setSettingsUiStyle(style)
+        }
+    }
+
+    private fun setDynamicArtworkBackground(enabled: Boolean) {
+        if (_uiState.value.dynamicArtworkBackgroundEnabled == enabled) return
+        viewModelScope.launch {
+            themeDataStore.setDynamicArtworkBackgroundEnabled(enabled)
         }
     }
 }
