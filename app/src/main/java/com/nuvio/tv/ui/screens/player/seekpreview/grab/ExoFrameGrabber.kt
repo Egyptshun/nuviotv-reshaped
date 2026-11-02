@@ -412,7 +412,7 @@ private object GrabberMediaCodecSelector : MediaCodecSelector {
         val base = MediaCodecSelector.DEFAULT.getDecoderInfos(
             mimeType,
             requiresSecureDecoder,
-            requiresTunnelingDecoder = false,
+            false,
         ).filterNot { it.tunneling }
         if (base.isNotEmpty()) return base
         if (mimeType == MimeTypes.VIDEO_DOLBY_VISION) {
