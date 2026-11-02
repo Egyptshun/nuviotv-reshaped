@@ -933,6 +933,9 @@ internal suspend fun HomeViewModel.updateCatalogRowsPipeline() {
     }
 
     schedulePosterStatusReconcilePipeline(displayRows)
+    if (!catalogsLoadInProgress && pendingCatalogLoads == 0) {
+        scheduleHomeSnapshotSave()
+    }
 }
 
 private fun stableHeroSortKey(
