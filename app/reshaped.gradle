@@ -31,9 +31,7 @@ if (autoSyncFork) {
         defaults.applicationId = reshapedLegacyBridge ? "com.nuviodebug.com" : "com.nuvioreshaped.tv"
     }
 }
-// Seekr seek-preview key, supplied to CI builds from the SEEKR_API_KEY secret.
-defaults.buildConfigField("String", "SEEKR_API_KEY", buildConfigString(localProperties.getProperty("SEEKR_API_KEY", "").trim()))
-// Google sign-in for Reshaped sync (a "TVs and Limited Input devices" OAuth client), from the
+// On-device speech recognition for the audio subtitle sync fallback (sherpa-onnx, Apache-2.0).
 // RESHAPED_GOOGLE_TV_CLIENT_ID / _SECRET secrets. Without them, sign-in shows as not set up.
 defaults.buildConfigField("String", "RESHAPED_GOOGLE_TV_CLIENT_ID", buildConfigString(resolveProperty("RESHAPED_GOOGLE_TV_CLIENT_ID", "")))
 defaults.buildConfigField("String", "RESHAPED_GOOGLE_TV_CLIENT_SECRET", buildConfigString(resolveProperty("RESHAPED_GOOGLE_TV_CLIENT_SECRET", "")))
@@ -74,8 +72,6 @@ android.packaging.jniLibs.excludes.addAll(["lib/*/libsherpa-onnx-c-api.so", "lib
 android.buildTypes.configureEach { it.proguardFile("reshaped-proguard-rules.pro") }
 
 dependencies {
-    // Seek-preview thumbnails (seekr.tv)
-    implementation "tv.seekr:seekr-compose:0.2.0"
     implementation files(sherpaOnnxAar)
     // The audio sync tests use kotlin.test.
     testImplementation "org.jetbrains.kotlin:kotlin-test:${kotlin.coreLibrariesVersion}"

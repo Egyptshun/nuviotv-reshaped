@@ -33,14 +33,15 @@ data class SeekPreviewThumbnail(
 )
 
 /**
- * Seek-preview thumbnails queried by playback position: Seekr sprite sheets, frames generated on
- * the device from the playing stream, or both (see [HybridSeekPreviewTrack]).
+ * Seek-preview thumbnails queried by playback position: frames generated on the device from the
+ * playing stream, a headless ExoPlayer grabber, TorBox sprites, or a combination (see
+ * [FallbackPreviewTrack]).
  */
 interface SeekPreviewTrack {
-    /** Signed milliseconds added to a requested position before the lookup (Preview Sync). */
+    /** Signed milliseconds added to a requested position before the lookup (TorBox calibration). */
     var offsetMs: Long
 
-    /** Built from the playing stream itself, so it never needs Preview Sync. */
+    /** Built from the playing stream itself, so it never needs an external sync offset. */
     val isLocal: Boolean get() = false
 
     /** Bumped whenever thumbnails are added, so a visible preview re-reads its frame. */
@@ -85,90 +86,65 @@ interface SeekPreviewTrack {
 
 private val StaticRevision: StateFlow<Int> = MutableStateFlow(0)
 
-/** Adapts the Seekr library's track. Its sheets are prefetched by [SeekPreviewState]. */
-internal class SeekrPreviewTrack(private val seekr: BoundedSeekrTrack) : SeekPreviewTrack {
-    override val revision: StateFlow<Int> get() = seekr.revision
-    override var offsetMs: Long
-        get() = seekr.offsetMs
-        set(value) {
-            seekr.offsetMs = value
-        }
-
-    override suspend fun thumbnailFor(positionMs: Long): SeekPreviewThumbnail? =
-        seekr.thumbnailFor(positionMs)?.let { thumbnail ->
-            SeekPreviewThumbnail(
-                bitmap = thumbnail.bitmap,
-                cueStartMs = thumbnail.cueStartMs,
-                cueEndMs = thumbnail.cueEndMs,
-                origin = "SEEKR",
-            )
-        }
-    override suspend fun sideThumbnailFor(positionMs: Long): SeekPreviewThumbnail? = seekr.sideThumbnailFor(positionMs)?.let {
-        SeekPreviewThumbnail(it.bitmap, it.cueStartMs, it.cueEndMs, origin = "SEEKR")
-    }
-}
-
 /**
- * On-device thumbnails where playback has already been, Seekr everywhere else.
- *
- * The on-device track only has frames for parts of the title that were buffered, now or on an
- * earlier watch. Where it has an exact frame that frame wins, since it always lines up; where it
- * would only offer a nearby stand-in, the Seekr frame is shown instead. The Preview Sync offset
- * only moves Seekr frames: on-device ones are already on playback's timeline, so their cue times
- * are shifted onto the preview timeline here to keep the caller's `cue - offset` conversion right.
+ * Primary on-device thumbnails where available; the grabber fills any slot the primary does not
+ * have yet (mpv, HLS/DASH, or unplayed regions).
  *
  * Owns neither track: [SeekPreviewState] opens and closes both.
  */
-internal class HybridSeekPreviewTrack(
-    private val local: SeekPreviewTrack,
-    private val seekr: SeekPreviewTrack,
+internal class FallbackPreviewTrack(
+    private val primary: SeekPreviewTrack,
+    private val fallback: SeekPreviewTrack,
 ) : SeekPreviewTrack {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val changes = MutableStateFlow(0)
     override var offsetMs: Long
-        get() = seekr.offsetMs
+        get() = primary.offsetMs
         set(value) {
-            seekr.offsetMs = value
+            primary.offsetMs = value
+            fallback.offsetMs = value
         }
 
     override val revision: StateFlow<Int> = changes
-    init { scope.launch { combine(local.revision, seekr.revision) { a, b -> a to b }.collect { changes.value++ } } }
+    init { scope.launch { combine(primary.revision, fallback.revision) { a, b -> a to b }.collect { changes.value++ } } }
     override fun close() = scope.cancel()
 
     override suspend fun thumbnailFor(positionMs: Long): SeekPreviewThumbnail? {
-        val cached = local.sideThumbnailFor(positionMs)
+        val cached = primary.sideThumbnailFor(positionMs)
         if (cached != null && !cached.approximate) {
-            // Keep provider priority aligned even when the centre was already cached.
-            return shifted(local.thumbnailFor(positionMs) ?: cached)
+            return primary.thumbnailFor(positionMs) ?: cached
         }
-        val external = seekr.thumbnailFor(positionMs)
+        val external = fallback.thumbnailFor(positionMs)
         if (external != null) {
-            local.externalPreviewAvailable(positionMs)
+            primary.externalPreviewAvailable(positionMs)
             return external
         }
-        return pick(positionMs, local.thumbnailFor(positionMs))
+        return pick(positionMs, primary.thumbnailFor(positionMs))
     }
 
     override suspend fun sideThumbnailFor(positionMs: Long): SeekPreviewThumbnail? =
-        pick(positionMs, local.sideThumbnailFor(positionMs), side = true)
+        pick(positionMs, primary.sideThumbnailFor(positionMs), side = true)
 
     override suspend fun neighborThumbnailFor(frame: SeekPreviewThumbnail, forward: Boolean): SeekPreviewThumbnail? =
         if (frame.origin == "ORIGINAL" || frame.origin == "VERIFIED_COPY") {
-            local.neighborThumbnailFor(frame.copy(cueStartMs = frame.cueStartMs - offsetMs,
-                cueEndMs = frame.cueEndMs - offsetMs), forward)?.let(::shifted)
+            primary.neighborThumbnailFor(frame, forward)
         } else super<SeekPreviewTrack>.neighborThumbnailFor(frame, forward)
 
-    private suspend fun pick(positionMs: Long, localThumbnail: SeekPreviewThumbnail?, side: Boolean = false): SeekPreviewThumbnail? {
-        val own = localThumbnail?.let(::shifted)
-        if (own != null && !own.approximate) return own
-        return (if (side) seekr.sideThumbnailFor(positionMs) else seekr.thumbnailFor(positionMs)) ?: own
+    private suspend fun pick(
+        positionMs: Long,
+        primaryThumbnail: SeekPreviewThumbnail?,
+        side: Boolean = false,
+    ): SeekPreviewThumbnail? {
+        if (primaryThumbnail != null && !primaryThumbnail.approximate) return primaryThumbnail
+        return (if (side) fallback.sideThumbnailFor(positionMs) else fallback.thumbnailFor(positionMs))
+            ?: primaryThumbnail
     }
 
-    private fun shifted(thumbnail: SeekPreviewThumbnail): SeekPreviewThumbnail =
-        if (seekr.offsetMs == 0L) thumbnail else thumbnail.copy(
-            cueStartMs = thumbnail.cueStartMs + seekr.offsetMs,
-            cueEndMs = thumbnail.cueEndMs + seekr.offsetMs)
-
     override fun keyframeNear(positionMs: Long, toleranceMs: Long): Long? =
-        local.keyframeNear(positionMs, toleranceMs)
+        primary.keyframeNear(positionMs, toleranceMs)
+
+    override fun noteHeldScrub(held: Boolean) {
+        primary.noteHeldScrub(held)
+        fallback.noteHeldScrub(held)
+    }
 }
